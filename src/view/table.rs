@@ -1,0 +1,299 @@
+use ratatui::{
+    crossterm::event::KeyEvent,
+    layout::{Margin, Rect},
+    style::Stylize,
+    text::Line,
+    widgets::{Block, Cell},
+    Frame,
+};
+
+use crate::{
+    color::ColorTheme,
+    constant::APP_NAME,
+    data::{
+        list_attribute_keys, Attribute, Item, KeySchemaType, RawJsonItem, TableDescription,
+        TableInsight,
+    },
+    event::{AppEvent, Sender, UserEvent, UserEventMapper},
+    help::{
+        build_help_spans, build_short_help_spans, BuildHelpsItem, BuildShortHelpsItem, Spans,
+        SpansWithPriority,
+    },
+    view::common::{attribute_to_spans, cut_spans_by_width},
+    widget::{Table, TableState},
+};
+
+const MAX_ATTRIBUTE_ITEM_WIDTH: usize = 30;
+const ELLIPSIS: &str = "...";
+
+pub struct TableView {
+    table_description: TableDescription,
+    items: Vec<Item>,
+
+    helps: Vec<Spans>,
+    short_helps: Vec<SpansWithPriority>,
+    theme: ColorTheme,
+    tx: Sender,
+
+    row_cells: Vec<Vec<Cell<'static>>>,
+    header_row_cells: Vec<Cell<'static>>,
+    table_state: TableState,
+}
+
+impl TableView {
+    pub fn new(
+        table_description: TableDescription,
+        items: Vec<Item>,
+        mapper: &UserEventMapper,
+        theme: ColorTheme,
+        tx: Sender,
+    ) -> Self {
+        let (table_state, row_cells, header_row_cells) =
+            new_table_state(&table_description, &items, theme);
+        let helps = build_helps(mapper, theme);
+        let short_helps = build_short_helps(mapper);
+
+        TableView {
+            table_description,
+            items,
+
+            helps,
+            short_helps,
+            theme,
+            tx,
+
+            row_cells,
+            header_row_cells,
+            table_state,
+        }
+    }
+}
+
+impl TableView {
+    pub fn handle_user_key_event(&mut self, user_event: Option<UserEvent>, _key_event: KeyEvent) {
+        if let Some(user_event) = user_event {
+            match user_event {
+                UserEvent::Close => {
+                    self.tx.send(AppEvent::BackToBeforeView);
+                }
+                UserEvent::Down => {
+                    self.table_state.select_next_row();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::Up => {
+                    self.table_state.select_prev_row();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::PageDown => {
+                    self.table_state.select_next_row_page();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::PageUp => {
+                    self.table_state.select_prev_row_page();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::GoToBottom => {
+                    self.table_state.select_last_row();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::GoToTop => {
+                    self.table_state.select_first_row();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::GoToLeft => {
+                    self.table_state.select_first_col();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::GoToRight => {
+                    self.table_state.select_last_col();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::Right => {
+                    self.table_state.select_next_col();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::Left => {
+                    self.table_state.select_prev_col();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::Confirm => {
+                    self.open_item();
+                }
+                UserEvent::Insight => {
+                    self.open_table_insight();
+                }
+                UserEvent::CopyToClipboard => {
+                    self.copy_to_clipboard();
+                }
+                UserEvent::Help => {
+                    self.open_help();
+                }
+                _ => {}
+            }
+        }
+    }
+
+    pub fn render(&mut self, f: &mut Frame, area: Rect) {
+        let title = format!(" {} - {} ", APP_NAME, self.table_description.table_name);
+        let count = self.table_state.selected_count_string();
+        let block = Block::bordered()
+            .title_top(Line::from(title).left_aligned())
+            .title_top(Line::from(count).right_aligned())
+            .fg(self.theme.fg)
+            .bg(self.theme.bg);
+        f.render_widget(block, area);
+
+        let table_area = area.inner(Margin::new(2, 1));
+        let table = Table::new(&self.row_cells, &self.header_row_cells).theme(&self.theme);
+        f.render_stateful_widget(table, table_area, &mut self.table_state);
+    }
+
+    pub fn short_helps(&self) -> &[SpansWithPriority] {
+        &self.short_helps
+    }
+}
+
+fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> Vec<Spans> {
+    #[rustfmt::skip]
+    let helps = vec![
+        BuildHelpsItem::new(UserEvent::Quit, "Quit app"),
+        BuildHelpsItem::new(UserEvent::Close, "Back to table list"),
+        BuildHelpsItem::new(UserEvent::Down, "Select next row"),
+        BuildHelpsItem::new(UserEvent::Up, "Select previous row"),
+        BuildHelpsItem::new(UserEvent::Right, "Select next column"),
+        BuildHelpsItem::new(UserEvent::Left, "Select previous column"),
+        BuildHelpsItem::new(UserEvent::PageDown, "Select next page"),
+        BuildHelpsItem::new(UserEvent::PageUp, "Select previous page"),
+        BuildHelpsItem::new(UserEvent::GoToTop, "Select first row"),
+        BuildHelpsItem::new(UserEvent::GoToBottom, "Select last row"),
+        BuildHelpsItem::new(UserEvent::GoToLeft, "Select first column"),
+        BuildHelpsItem::new(UserEvent::GoToRight, "Select last column"),
+        BuildHelpsItem::new(UserEvent::Confirm, "Open selected item"),
+        BuildHelpsItem::new(UserEvent::Insight, "Open table insight"),
+        BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy selected item"),
+    ];
+    build_help_spans(helps, mapper, theme)
+}
+
+fn build_short_helps(mapper: &UserEventMapper) -> Vec<SpansWithPriority> {
+    #[rustfmt::skip]
+    let helps = vec![
+        BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
+        BuildShortHelpsItem::single(UserEvent::Close, "Back", 1),
+        BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select row", 4),
+        BuildShortHelpsItem::group(vec![UserEvent::Left, UserEvent::Right], "Select col", 5),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 7),
+        BuildShortHelpsItem::single(UserEvent::Confirm, "Open", 2),
+        BuildShortHelpsItem::single(UserEvent::Insight, "Insight", 3),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 6),
+        BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
+    ];
+    build_short_help_spans(helps, mapper)
+}
+
+impl TableView {
+    fn open_item(&self) {
+        if let Some(item) = self.items.get(self.table_state.selected_row) {
+            let desc = self.table_description.clone();
+            let item = item.clone();
+            self.tx.send(AppEvent::OpenItem(desc, item));
+        }
+    }
+
+    fn open_table_insight(&self) {
+        let insight = TableInsight::new(&self.table_description, &self.items);
+        self.tx.send(AppEvent::OpenTableInsight(insight));
+    }
+
+    fn copy_to_clipboard(&self) {
+        let selected_item = &self.items[self.table_state.selected_row];
+        let schema = &self.table_description.key_schema_type;
+
+        let (name, content) = if let Some(col) = self.table_state.selected_col {
+            let key = &list_attribute_keys(&self.items, schema)[col];
+            if let Some(attr) = selected_item.attributes.get(key) {
+                ("selected attribute", attr.to_simple_string())
+            } else {
+                return;
+            }
+        } else {
+            let raw_json_string = get_raw_json_string(selected_item, schema);
+            ("selected item", raw_json_string)
+        };
+
+        self.tx
+            .send(AppEvent::CopyToClipboard(name.into(), content));
+    }
+
+    fn open_help(&self) {
+        self.tx.send(AppEvent::OpenHelp(self.helps.clone()))
+    }
+}
+
+fn new_table_state(
+    table_description: &TableDescription,
+    items: &[Item],
+    theme: ColorTheme,
+) -> (TableState, Vec<Vec<Cell<'static>>>, Vec<Cell<'static>>) {
+    let attribute_keys = list_attribute_keys(items, &table_description.key_schema_type);
+    let total_rows = items.len();
+    let total_cols = attribute_keys.len();
+
+    let mut max_width_vec: Vec<usize> = vec![0; total_cols];
+
+    let mut row_cells: Vec<Vec<Cell>> = Vec::with_capacity(total_rows);
+    for item in items {
+        let mut cells: Vec<Cell> = Vec::new();
+        for (i, key) in attribute_keys.iter().enumerate() {
+            let (cell, width) = item
+                .attributes
+                .get(key)
+                .map(|attr| attribute_to_cell(attr, &theme))
+                .unwrap_or(undefined_cell(&theme));
+            cells.push(cell);
+
+            if width > max_width_vec[i] {
+                max_width_vec[i] = width;
+            }
+        }
+        row_cells.push(cells);
+    }
+
+    let mut header_row_cells: Vec<Cell> = Vec::with_capacity(total_cols);
+    for (i, key) in attribute_keys.iter().enumerate() {
+        let (cell, width) = key_to_cell(key, &theme);
+        header_row_cells.push(cell);
+        if width > max_width_vec[i] {
+            max_width_vec[i] = width;
+        }
+    }
+
+    let table_state = TableState::new(total_rows, total_cols, max_width_vec);
+
+    (table_state, row_cells, header_row_cells)
+}
+
+fn attribute_to_cell(attr: &Attribute, theme: &ColorTheme) -> (Cell<'static>, usize) {
+    let spans = attribute_to_spans(attr, theme);
+    let spans = cut_spans_by_width(spans, MAX_ATTRIBUTE_ITEM_WIDTH, ELLIPSIS, theme);
+    let line = Line::from(spans);
+    let width = line.width();
+    (Cell::new(line), width)
+}
+
+fn key_to_cell(key: &str, theme: &ColorTheme) -> (Cell<'static>, usize) {
+    let span = key.to_string().bold();
+    let spans = cut_spans_by_width(vec![span], MAX_ATTRIBUTE_ITEM_WIDTH, ELLIPSIS, theme);
+    let line = Line::from(spans);
+    let width = line.width();
+    (Cell::new(line), width)
+}
+
+fn undefined_cell(theme: &ColorTheme) -> (Cell<'static>, usize) {
+    (Cell::new("-").fg(theme.cell_undefined_fg), 1)
+}
+
+fn get_raw_json_string(item: &Item, schema: &KeySchemaType) -> String {
+    let json_item = RawJsonItem::new(item, schema);
+    serde_json::to_string(&json_item).unwrap()
+}
