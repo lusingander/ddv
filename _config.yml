@@ -1,0 +1,7 @@
+remote_theme: pages-themes/minimal@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-sitemap
+title: DDV
+description: Terminal DynamoDB Viewer ⚡️
+show_downloads: false
