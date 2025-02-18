@@ -27,7 +27,7 @@ DDV is a TUI application to view Amazon DynamoDB in the terminal.
 ### [Cargo](https://crates.io/crates/ddv)
 
 ```
-$ cargo install --locked serie
+$ cargo install --locked ddv
 ```
 
 ### [Homebrew (macOS)](https://github.com/lusingander/homebrew-tap/blob/master/ddv.rb)
@@ -81,16 +81,16 @@ The basic key bindings are as follows:
 
 Detailed operations on each view can be displayed by pressing `?` key.
 
-## Features / Screenshots
+## Screenshots
 
-<img src="./img/table-list-list.png" width=400>
-<img src="./img/table-list-detail-kv.png" width=400>
-<img src="./img/table-list-detail-json.png" width=400>
-<img src="./img/table.png" width=400>
-<img src="./img/item-kv.png" width=400>
-<img src="./img/item-plain-json.png" width=400>
-<img src="./img/item-raw-json.png" width=400>
-<img src="./img/table-insight.png" width=400>
+<img src="./img/table-list-list.png" width=500>
+<img src="./img/table-list-detail-kv.png" width=500>
+<img src="./img/table-list-detail-json.png" width=500>
+<img src="./img/table.png" width=500>
+<img src="./img/item-kv.png" width=500>
+<img src="./img/item-plain-json.png" width=500>
+<img src="./img/item-raw-json.png" width=500>
+<img src="./img/table-insight.png" width=500>
 
 ## Related projects
 
