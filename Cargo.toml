@@ -37,3 +37,7 @@ syntect = { version = "5.2.0", default-features = false, features = [
 ] }
 textwrap = "0.16.1"
 tokio = { version = "1.43.0", features = ["full"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
