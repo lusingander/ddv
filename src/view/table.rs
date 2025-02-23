@@ -111,6 +111,12 @@ impl TableView {
                     UserEvent::Left => {
                         self.attr_scroll_lines_state.scroll_left();
                     }
+                    UserEvent::ToggleWrap => {
+                        self.attr_scroll_lines_state.toggle_wrap();
+                    }
+                    UserEvent::ToggleNumber => {
+                        self.attr_scroll_lines_state.toggle_number();
+                    }
                     UserEvent::CopyToClipboard => {
                         self.copy_to_clipboard();
                     }
@@ -305,8 +311,8 @@ impl TableView {
             let key = &list_attribute_keys(&self.items, schema)[col];
             if let Some(attr) = selected_item.attributes.get(key) {
                 let lines = get_raw_json_attribute_lines(attr);
-                self.attr_scroll_lines_state =
-                    ScrollLinesState::new(lines, ScrollLinesOptions::new(false, false));
+                let options = self.attr_scroll_lines_state.current_options();
+                self.attr_scroll_lines_state = ScrollLinesState::new(lines, options);
             }
             self.attr_expanded = true;
         }
