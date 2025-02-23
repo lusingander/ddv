@@ -83,15 +83,7 @@ Detailed operations on each view can be displayed by pressing `?` key.
 
 ## Screenshots
 
-<img src="./img/table-list-list.png" width=500>
-<img src="./img/table-list-detail-kv.png" width=500>
-<img src="./img/table-list-detail-json.png" width=500>
-<img src="./img/table.png" width=500>
-<img src="./img/table-expand-attr.png" width=500>
-<img src="./img/item-kv.png" width=500>
-<img src="./img/item-plain-json.png" width=500>
-<img src="./img/item-raw-json.png" width=500>
-<img src="./img/table-insight.png" width=500>
+<img src="./img/table-list-list.png" width=400> <img src="./img/table-list-detail-kv.png" width=400> <img src="./img/table-list-detail-json.png" width=400> <img src="./img/table.png" width=400> <img src="./img/table-expand-attr.png" width=400> <img src="./img/item-kv.png" width=400> <img src="./img/item-plain-json.png" width=400> <img src="./img/item-raw-json.png" width=400> <img src="./img/table-insight.png" width=400>
 
 ## Related projects
 
