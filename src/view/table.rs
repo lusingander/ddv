@@ -2,8 +2,9 @@ use ratatui::{
     crossterm::event::KeyEvent,
     layout::{Margin, Rect},
     style::Stylize,
+    symbols::border,
     text::Line,
-    widgets::{Block, Cell},
+    widgets::{Block, Cell, Clear},
     Frame,
 };
 
@@ -11,20 +12,23 @@ use crate::{
     color::ColorTheme,
     constant::APP_NAME,
     data::{
-        list_attribute_keys, Attribute, Item, KeySchemaType, RawJsonItem, TableDescription,
-        TableInsight,
+        list_attribute_keys, Attribute, Item, KeySchemaType, RawAttributeJsonWrapper, RawJsonItem,
+        TableDescription, TableInsight,
     },
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
     help::{
         build_help_spans, build_short_help_spans, BuildHelpsItem, BuildShortHelpsItem, Spans,
         SpansWithPriority,
     },
-    view::common::{attribute_to_spans, cut_spans_by_width},
-    widget::{Table, TableState},
+    view::common::{attribute_to_spans, cut_spans_by_width, to_highlighted_lines},
+    widget::{ScrollLines, ScrollLinesOptions, ScrollLinesState, Table, TableState},
 };
 
 const MAX_ATTRIBUTE_ITEM_WIDTH: usize = 30;
 const ELLIPSIS: &str = "...";
+
+const EXPANDED_POPUP_WIDTH: u16 = 35;
+const EXPANDED_POPUP_HEIGHT: u16 = 6;
 
 pub struct TableView {
     table_description: TableDescription,
@@ -38,6 +42,8 @@ pub struct TableView {
     row_cells: Vec<Vec<Cell<'static>>>,
     header_row_cells: Vec<Cell<'static>>,
     table_state: TableState,
+    attr_expanded: bool,
+    attr_scroll_lines_state: ScrollLinesState,
 }
 
 impl TableView {
@@ -52,6 +58,8 @@ impl TableView {
             new_table_state(&table_description, &items, theme);
         let helps = build_helps(mapper, theme);
         let short_helps = build_short_helps(mapper);
+        let attr_scroll_lines_state =
+            ScrollLinesState::new(vec![], ScrollLinesOptions::new(false, false));
 
         TableView {
             table_description,
@@ -65,6 +73,8 @@ impl TableView {
             row_cells,
             header_row_cells,
             table_state,
+            attr_expanded: false,
+            attr_scroll_lines_state,
         }
     }
 }
@@ -72,63 +82,105 @@ impl TableView {
 impl TableView {
     pub fn handle_user_key_event(&mut self, user_event: Option<UserEvent>, _key_event: KeyEvent) {
         if let Some(user_event) = user_event {
-            match user_event {
-                UserEvent::Close => {
-                    self.tx.send(AppEvent::BackToBeforeView);
+            if self.attr_expanded {
+                match user_event {
+                    UserEvent::Close | UserEvent::Expand => {
+                        self.close_expand_selected_attr();
+                    }
+                    UserEvent::Down => {
+                        self.attr_scroll_lines_state.scroll_forward();
+                    }
+                    UserEvent::Up => {
+                        self.attr_scroll_lines_state.scroll_backward();
+                    }
+                    UserEvent::PageDown => {
+                        self.attr_scroll_lines_state.scroll_page_forward();
+                    }
+                    UserEvent::PageUp => {
+                        self.attr_scroll_lines_state.scroll_page_backward();
+                    }
+                    UserEvent::GoToTop => {
+                        self.attr_scroll_lines_state.scroll_to_top();
+                    }
+                    UserEvent::GoToBottom => {
+                        self.attr_scroll_lines_state.scroll_to_end();
+                    }
+                    UserEvent::Right => {
+                        self.attr_scroll_lines_state.scroll_right();
+                    }
+                    UserEvent::Left => {
+                        self.attr_scroll_lines_state.scroll_left();
+                    }
+                    UserEvent::CopyToClipboard => {
+                        self.copy_to_clipboard();
+                    }
+                    UserEvent::Help => {
+                        self.open_help();
+                    }
+                    _ => {}
                 }
-                UserEvent::Down => {
-                    self.table_state.select_next_row();
-                    self.table_state.update_table_state();
+            } else {
+                match user_event {
+                    UserEvent::Close => {
+                        self.tx.send(AppEvent::BackToBeforeView);
+                    }
+                    UserEvent::Down => {
+                        self.table_state.select_next_row();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::Up => {
+                        self.table_state.select_prev_row();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::PageDown => {
+                        self.table_state.select_next_row_page();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::PageUp => {
+                        self.table_state.select_prev_row_page();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::GoToBottom => {
+                        self.table_state.select_last_row();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::GoToTop => {
+                        self.table_state.select_first_row();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::GoToLeft => {
+                        self.table_state.select_first_col();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::GoToRight => {
+                        self.table_state.select_last_col();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::Right => {
+                        self.table_state.select_next_col();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::Left => {
+                        self.table_state.select_prev_col();
+                        self.table_state.update_table_state();
+                    }
+                    UserEvent::Confirm => {
+                        self.open_item();
+                    }
+                    UserEvent::Insight => {
+                        self.open_table_insight();
+                    }
+                    UserEvent::Expand => {
+                        self.open_expand_selected_attr();
+                    }
+                    UserEvent::CopyToClipboard => {
+                        self.copy_to_clipboard();
+                    }
+                    UserEvent::Help => {
+                        self.open_help();
+                    }
+                    _ => {}
                 }
-                UserEvent::Up => {
-                    self.table_state.select_prev_row();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::PageDown => {
-                    self.table_state.select_next_row_page();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::PageUp => {
-                    self.table_state.select_prev_row_page();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::GoToBottom => {
-                    self.table_state.select_last_row();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::GoToTop => {
-                    self.table_state.select_first_row();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::GoToLeft => {
-                    self.table_state.select_first_col();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::GoToRight => {
-                    self.table_state.select_last_col();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::Right => {
-                    self.table_state.select_next_col();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::Left => {
-                    self.table_state.select_prev_col();
-                    self.table_state.update_table_state();
-                }
-                UserEvent::Confirm => {
-                    self.open_item();
-                }
-                UserEvent::Insight => {
-                    self.open_table_insight();
-                }
-                UserEvent::CopyToClipboard => {
-                    self.copy_to_clipboard();
-                }
-                UserEvent::Help => {
-                    self.open_help();
-                }
-                _ => {}
             }
         }
     }
@@ -146,6 +198,10 @@ impl TableView {
         let table_area = area.inner(Margin::new(2, 1));
         let table = Table::new(&self.row_cells, &self.header_row_cells).theme(&self.theme);
         f.render_stateful_widget(table, table_area, &mut self.table_state);
+
+        if self.attr_expanded {
+            self.render_expanded_item(f, table_area);
+        }
     }
 
     pub fn short_helps(&self) -> &[SpansWithPriority] {
@@ -192,6 +248,43 @@ fn build_short_helps(mapper: &UserEventMapper) -> Vec<SpansWithPriority> {
 }
 
 impl TableView {
+    fn render_expanded_item(&mut self, f: &mut Frame, area: Rect) {
+        if let Some((x, y)) = self.table_state.selected_item_position() {
+            let x = area.left() + x;
+            let y = area.top() + y + 1; // +1 for header row
+            let (w, h) = (EXPANDED_POPUP_WIDTH + 2, EXPANDED_POPUP_HEIGHT + 2); // +2 for border
+
+            #[allow(clippy::collapsible_else_if)]
+            let (left, top) = if x + w - 1 < area.right() {
+                if y + h < area.bottom() {
+                    (x - 1, y + 1)
+                } else {
+                    (x - 1, y - h)
+                }
+            } else {
+                if y + h < area.bottom() {
+                    (area.right() - w, y + 1)
+                } else {
+                    (area.right() - w, y - h)
+                }
+            };
+            let popup_area = Rect::new(left, top, w, h);
+
+            let scroll = ScrollLines::default()
+                .block(
+                    Block::bordered()
+                        .border_set(border::DOUBLE)
+                        .fg(self.theme.fg)
+                        .bg(self.theme.bg),
+                )
+                .theme(&self.theme);
+            f.render_widget(Clear, popup_area);
+            f.render_stateful_widget(scroll, popup_area, &mut self.attr_scroll_lines_state);
+        }
+    }
+}
+
+impl TableView {
     fn open_item(&self) {
         if let Some(item) = self.items.get(self.table_state.selected_row) {
             let desc = self.table_description.clone();
@@ -203,6 +296,24 @@ impl TableView {
     fn open_table_insight(&self) {
         let insight = TableInsight::new(&self.table_description, &self.items);
         self.tx.send(AppEvent::OpenTableInsight(insight));
+    }
+
+    fn open_expand_selected_attr(&mut self) {
+        if let Some(col) = self.table_state.selected_col {
+            let selected_item = &self.items[self.table_state.selected_row];
+            let schema = &self.table_description.key_schema_type;
+            let key = &list_attribute_keys(&self.items, schema)[col];
+            if let Some(attr) = selected_item.attributes.get(key) {
+                let lines = get_raw_json_attribute_lines(attr);
+                self.attr_scroll_lines_state =
+                    ScrollLinesState::new(lines, ScrollLinesOptions::new(false, false));
+            }
+            self.attr_expanded = true;
+        }
+    }
+
+    fn close_expand_selected_attr(&mut self) {
+        self.attr_expanded = false;
     }
 
     fn copy_to_clipboard(&self) {
@@ -296,4 +407,10 @@ fn undefined_cell(theme: &ColorTheme) -> (Cell<'static>, usize) {
 fn get_raw_json_string(item: &Item, schema: &KeySchemaType) -> String {
     let json_item = RawJsonItem::new(item, schema);
     serde_json::to_string(&json_item).unwrap()
+}
+
+fn get_raw_json_attribute_lines(attr: &Attribute) -> Vec<Line<'static>> {
+    let wrapper = RawAttributeJsonWrapper::new(attr);
+    let json_str = serde_json::to_string_pretty(&wrapper).unwrap();
+    to_highlighted_lines(&json_str)
 }
