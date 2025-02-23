@@ -52,7 +52,17 @@ Sleep 1s
 Type@200ms "lllllllllll"
 Sleep 1s
 Type@500ms "fff"
+Sleep 500ms
+Type@200ms "hhh"
+Type "e"
 Sleep 1s
+Type "n"
+Sleep 500ms
+Screenshot "./img/table-expand-attr.png"
+Type@200ms "jjjjj"
+Sleep 500ms
+Type "e"
+Sleep 500ms
 Type "^"
 Sleep 500ms
 Type@500ms "jjj"
