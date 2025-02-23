@@ -34,8 +34,10 @@ pub struct TableView {
     table_description: TableDescription,
     items: Vec<Item>,
 
-    helps: Vec<Spans>,
-    short_helps: Vec<SpansWithPriority>,
+    table_helps: Vec<Spans>,
+    attr_helps: Vec<Spans>,
+    table_short_helps: Vec<SpansWithPriority>,
+    attr_short_helps: Vec<SpansWithPriority>,
     theme: ColorTheme,
     tx: Sender,
 
@@ -56,8 +58,8 @@ impl TableView {
     ) -> Self {
         let (table_state, row_cells, header_row_cells) =
             new_table_state(&table_description, &items, theme);
-        let helps = build_helps(mapper, theme);
-        let short_helps = build_short_helps(mapper);
+        let (table_helps, attr_helps) = build_helps(mapper, theme);
+        let (table_short_helps, attr_short_helps) = build_short_helps(mapper);
         let attr_scroll_lines_state =
             ScrollLinesState::new(vec![], ScrollLinesOptions::new(false, false));
 
@@ -65,8 +67,10 @@ impl TableView {
             table_description,
             items,
 
-            helps,
-            short_helps,
+            table_helps,
+            attr_helps,
+            table_short_helps,
+            attr_short_helps,
             theme,
             tx,
 
@@ -211,13 +215,17 @@ impl TableView {
     }
 
     pub fn short_helps(&self) -> &[SpansWithPriority] {
-        &self.short_helps
+        if self.attr_expanded {
+            &self.attr_short_helps
+        } else {
+            &self.table_short_helps
+        }
     }
 }
 
-fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> Vec<Spans> {
+fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<Spans>) {
     #[rustfmt::skip]
-    let helps = vec![
+    let table_helps = vec![
         BuildHelpsItem::new(UserEvent::Quit, "Quit app"),
         BuildHelpsItem::new(UserEvent::Close, "Back to table list"),
         BuildHelpsItem::new(UserEvent::Down, "Select next row"),
@@ -234,12 +242,31 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> Vec<Spans> {
         BuildHelpsItem::new(UserEvent::Insight, "Open table insight"),
         BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy selected item"),
     ];
-    build_help_spans(helps, mapper, theme)
+    #[rustfmt::skip]
+    let attr_helps = vec![
+        BuildHelpsItem::new(UserEvent::Quit, "Quit app"),
+        BuildHelpsItem::new(UserEvent::Close, "Close expansion"),
+        BuildHelpsItem::new(UserEvent::Down, "Scroll down"),
+        BuildHelpsItem::new(UserEvent::Up, "Scroll up"),
+        BuildHelpsItem::new(UserEvent::PageDown, "Scroll page down"),
+        BuildHelpsItem::new(UserEvent::PageUp, "Scroll page up"),
+        BuildHelpsItem::new(UserEvent::GoToTop, "Scroll to top"),
+        BuildHelpsItem::new(UserEvent::GoToBottom, "Scroll to bottom"),
+        BuildHelpsItem::new(UserEvent::Right, "Scroll right"),
+        BuildHelpsItem::new(UserEvent::Left, "Scroll left"),
+        BuildHelpsItem::new(UserEvent::ToggleWrap, "Toggle wrap"),
+        BuildHelpsItem::new(UserEvent::ToggleNumber, "Toggle number"),
+        BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy selected item"),
+    ];
+    (
+        build_help_spans(table_helps, mapper, theme),
+        build_help_spans(attr_helps, mapper, theme),
+    )
 }
 
-fn build_short_helps(mapper: &UserEventMapper) -> Vec<SpansWithPriority> {
+fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<SpansWithPriority>) {
     #[rustfmt::skip]
-    let helps = vec![
+    let table_helps = vec![
         BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
         BuildShortHelpsItem::single(UserEvent::Close, "Back", 1),
         BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select row", 4),
@@ -250,7 +277,20 @@ fn build_short_helps(mapper: &UserEventMapper) -> Vec<SpansWithPriority> {
         BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 6),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
-    build_short_help_spans(helps, mapper)
+    #[rustfmt::skip]
+    let attr_helps = vec![
+        BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
+        BuildShortHelpsItem::single(UserEvent::Close, "Close", 1),
+        BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Scroll", 2),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 4),
+        BuildShortHelpsItem::group(vec![UserEvent::ToggleWrap, UserEvent::ToggleNumber], "Toggle wrap/number", 5),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 3),
+        BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
+    ];
+    (
+        build_short_help_spans(table_helps, mapper),
+        build_short_help_spans(attr_helps, mapper),
+    )
 }
 
 impl TableView {
@@ -343,7 +383,11 @@ impl TableView {
     }
 
     fn open_help(&self) {
-        self.tx.send(AppEvent::OpenHelp(self.helps.clone()))
+        if self.attr_expanded {
+            self.tx.send(AppEvent::OpenHelp(self.attr_helps.clone()))
+        } else {
+            self.tx.send(AppEvent::OpenHelp(self.table_helps.clone()))
+        }
     }
 }
 
