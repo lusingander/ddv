@@ -353,8 +353,8 @@ impl TableView {
                 let lines = get_raw_json_attribute_lines(attr);
                 let options = self.attr_scroll_lines_state.current_options();
                 self.attr_scroll_lines_state = ScrollLinesState::new(lines, options);
+                self.attr_expanded = true;
             }
-            self.attr_expanded = true;
         }
     }
 
