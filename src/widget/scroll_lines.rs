@@ -113,6 +113,10 @@ impl ScrollLinesState {
     pub fn lines(&self) -> &[Line<'static>] {
         &self.lines
     }
+
+    pub fn max_width(&self) -> usize {
+        self.max_line_width + self.max_digits + 1 + 2 // padding
+    }
 }
 
 #[derive(Debug, Default)]

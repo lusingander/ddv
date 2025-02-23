@@ -27,8 +27,8 @@ use crate::{
 const MAX_ATTRIBUTE_ITEM_WIDTH: usize = 30;
 const ELLIPSIS: &str = "...";
 
-const EXPANDED_POPUP_WIDTH: u16 = 35;
-const EXPANDED_POPUP_HEIGHT: u16 = 6;
+const MAX_EXPANDED_POPUP_WIDTH: u16 = 35;
+const MAX_EXPANDED_POPUP_HEIGHT: u16 = 6;
 
 pub struct TableView {
     table_description: TableDescription,
@@ -298,7 +298,12 @@ impl TableView {
         if let Some((x, y)) = self.table_state.selected_item_position() {
             let x = area.left() + x;
             let y = area.top() + y + 1; // +1 for header row
-            let (w, h) = (EXPANDED_POPUP_WIDTH + 2, EXPANDED_POPUP_HEIGHT + 2); // +2 for border
+            let w =
+                (self.attr_scroll_lines_state.max_width() as u16).min(MAX_EXPANDED_POPUP_WIDTH) + 2; // +2 for border
+            let h = ((area.height - 1) / 2 - 1)
+                .min(self.attr_scroll_lines_state.lines().len() as u16)
+                .min(MAX_EXPANDED_POPUP_HEIGHT)
+                + 2; // +2 for header row
 
             #[allow(clippy::collapsible_else_if)]
             let (left, top) = if x + w - 1 < area.right() {
