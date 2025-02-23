@@ -369,7 +369,11 @@ impl TableView {
         let (name, content) = if let Some(col) = self.table_state.selected_col {
             let key = &list_attribute_keys(&self.items, schema)[col];
             if let Some(attr) = selected_item.attributes.get(key) {
-                ("selected attribute", attr.to_simple_string())
+                if self.attr_expanded {
+                    ("selected attribute", get_raw_json_attribute_string(attr))
+                } else {
+                    ("selected attribute", attr.to_simple_string())
+                }
             } else {
                 return;
             }
@@ -459,8 +463,12 @@ fn get_raw_json_string(item: &Item, schema: &KeySchemaType) -> String {
     serde_json::to_string(&json_item).unwrap()
 }
 
-fn get_raw_json_attribute_lines(attr: &Attribute) -> Vec<Line<'static>> {
+fn get_raw_json_attribute_string(attr: &Attribute) -> String {
     let wrapper = RawAttributeJsonWrapper::new(attr);
-    let json_str = serde_json::to_string_pretty(&wrapper).unwrap();
+    serde_json::to_string_pretty(&wrapper).unwrap()
+}
+
+fn get_raw_json_attribute_lines(attr: &Attribute) -> Vec<Line<'static>> {
+    let json_str = get_raw_json_attribute_string(attr);
     to_highlighted_lines(&json_str)
 }
