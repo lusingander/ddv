@@ -217,6 +217,20 @@ impl TableState {
         }
         format!(" {} / {} ", self.selected_row + 1, self.total_rows)
     }
+
+    pub fn selected_item_position(&self) -> Option<(u16, u16)> {
+        self.selected_col.map(|col| {
+            let x = self
+                .col_widths
+                .iter()
+                .skip(self.offset_col)
+                .take(col - self.offset_col)
+                .map(|w| *w + 1)
+                .sum::<usize>();
+            let y = self.selected_row - self.offset_row;
+            (x as u16, y as u16)
+        })
+    }
 }
 
 #[derive(Debug, Default)]
