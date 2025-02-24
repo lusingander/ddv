@@ -1,6 +1,7 @@
 mod app;
 mod client;
 mod color;
+mod config;
 mod constant;
 mod data;
 mod error;
@@ -12,7 +13,7 @@ mod widget;
 
 use clap::Parser;
 
-use crate::{app::App, client::Client, color::ColorTheme, event::UserEventMapper};
+use crate::{app::App, client::Client, color::ColorTheme, config::Config, event::UserEventMapper};
 
 /// DDV - Terminal DynamoDB Viewer ⚡️
 #[derive(Parser)]
@@ -34,6 +35,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
+    let config = Config::load();
     let theme = ColorTheme::default();
     let mapper = UserEventMapper::new();
 
@@ -44,7 +46,7 @@ async fn main() -> std::io::Result<()> {
 
     let mut terminal = ratatui::init();
 
-    let mut app = App::new(theme, mapper, client, tx);
+    let mut app = App::new(config, theme, mapper, client, tx);
     let ret = app.run(&mut terminal, rx);
 
     ratatui::restore();

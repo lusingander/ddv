@@ -13,6 +13,7 @@ use tokio::spawn;
 use crate::{
     client::Client,
     color::ColorTheme,
+    config::Config,
     data::{Item, Table, TableDescription, TableInsight},
     error::{AppError, AppResult},
     event::{AppEvent, Receiver, Sender, UserEvent, UserEventMapper},
@@ -31,6 +32,7 @@ enum Status {
 pub struct App {
     view_stack: ViewStack,
 
+    config: Config,
     theme: ColorTheme,
     mapper: UserEventMapper,
 
@@ -42,9 +44,16 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(theme: ColorTheme, mapper: UserEventMapper, client: Client, tx: Sender) -> Self {
+    pub fn new(
+        config: Config,
+        theme: ColorTheme,
+        mapper: UserEventMapper,
+        client: Client,
+        tx: Sender,
+    ) -> Self {
         App {
             view_stack: ViewStack::new(View::of_init(theme, tx.clone())),
+            config,
             theme,
             mapper,
             status: Status::None,
