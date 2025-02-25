@@ -2,6 +2,7 @@ use ratatui::{crossterm::event::KeyEvent, layout::Rect, Frame};
 
 use crate::{
     color::ColorTheme,
+    config::UiTableListConfig,
     data::{Item, Table, TableDescription, TableInsight},
     event::{Sender, UserEvent, UserEventMapper},
     help::{Spans, SpansWithPriority},
@@ -63,10 +64,13 @@ impl View {
     pub fn of_table_list(
         tables: Vec<Table>,
         mapper: &UserEventMapper,
+        config: UiTableListConfig,
         theme: ColorTheme,
         tx: Sender,
     ) -> Self {
-        View::TableList(Box::new(TableListView::new(tables, mapper, theme, tx)))
+        View::TableList(Box::new(TableListView::new(
+            tables, mapper, config, theme, tx,
+        )))
     }
 
     pub fn of_table(
