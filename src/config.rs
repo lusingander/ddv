@@ -1,10 +1,21 @@
+use std::env;
+
 use serde::Deserialize;
 use smart_default::SmartDefault;
 use umbra::optional;
 
+const CONFIG_PATH_ENV_VAR: &str = "DDV_CONFIG";
+
 impl Config {
     pub fn load() -> Config {
-        Config::default()
+        match env::var(CONFIG_PATH_ENV_VAR) {
+            Ok(path) => {
+                let content = std::fs::read_to_string(path).unwrap();
+                let config: OptionalConfig = toml::from_str(&content).unwrap();
+                config.into()
+            }
+            Err(_) => Config::default(),
+        }
     }
 }
 
