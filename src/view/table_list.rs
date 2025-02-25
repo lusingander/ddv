@@ -12,6 +12,7 @@ use ratatui::{
 
 use crate::{
     color::ColorTheme,
+    config::UiTableListConfig,
     constant::APP_NAME,
     data::{Table, TableDescription},
     error::AppError,
@@ -32,6 +33,7 @@ pub struct TableListView {
     detail_helps: Vec<Spans>,
     list_short_helps: Vec<SpansWithPriority>,
     detail_short_helps: Vec<SpansWithPriority>,
+    config: UiTableListConfig,
     theme: ColorTheme,
     tx: Sender,
 
@@ -58,6 +60,7 @@ impl TableListView {
     pub fn new(
         tables: Vec<Table>,
         mapper: &UserEventMapper,
+        config: UiTableListConfig,
         theme: ColorTheme,
         tx: Sender,
     ) -> Self {
@@ -74,6 +77,7 @@ impl TableListView {
             detail_helps,
             list_short_helps,
             detail_short_helps,
+            config,
             theme,
             tx,
             list_state,
@@ -199,8 +203,11 @@ impl TableListView {
     }
 
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
-        let [list_area, detail_area] =
-            Layout::horizontal([Constraint::Length(30), Constraint::Min(0)]).areas(area);
+        let [list_area, detail_area] = Layout::horizontal([
+            Constraint::Length(self.config.list_width),
+            Constraint::Min(0),
+        ])
+        .areas(area);
 
         self.render_list(f, list_area);
         self.render_detail(f, detail_area);

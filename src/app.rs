@@ -219,7 +219,13 @@ impl App {
     fn complete_initialize(&mut self, result: AppResult<Vec<Table>>) {
         match result {
             Ok(tables) => {
-                let view = View::of_table_list(tables, &self.mapper, self.theme, self.tx.clone());
+                let view = View::of_table_list(
+                    tables,
+                    &self.mapper,
+                    self.config.ui.table_list.clone(),
+                    self.theme,
+                    self.tx.clone(),
+                );
                 self.view_stack.pop();
                 self.view_stack.push(view);
                 // not update loading here
