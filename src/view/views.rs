@@ -2,7 +2,7 @@ use ratatui::{crossterm::event::KeyEvent, layout::Rect, Frame};
 
 use crate::{
     color::ColorTheme,
-    config::UiTableListConfig,
+    config::{UiTableConfig, UiTableListConfig},
     data::{Item, Table, TableDescription, TableInsight},
     event::{Sender, UserEvent, UserEventMapper},
     help::{Spans, SpansWithPriority},
@@ -77,10 +77,13 @@ impl View {
         desc: TableDescription,
         items: Vec<Item>,
         mapper: &UserEventMapper,
+        config: UiTableConfig,
         theme: ColorTheme,
         tx: Sender,
     ) -> Self {
-        View::Table(Box::new(TableView::new(desc, items, mapper, theme, tx)))
+        View::Table(Box::new(TableView::new(
+            desc, items, mapper, config, theme, tx,
+        )))
     }
 
     pub fn of_item(

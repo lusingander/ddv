@@ -20,6 +20,8 @@ pub struct Config {
 pub struct UiConfig {
     #[nested]
     pub table_list: UiTableListConfig,
+    #[nested]
+    pub table: UiTableConfig,
 }
 
 #[optional(derives = [Deserialize])]
@@ -27,4 +29,15 @@ pub struct UiConfig {
 pub struct UiTableListConfig {
     #[default = 30]
     pub list_width: u16,
+}
+
+#[optional(derives = [Deserialize])]
+#[derive(Debug, Clone, SmartDefault)]
+pub struct UiTableConfig {
+    #[default = 30]
+    pub max_attribute_width: usize,
+    #[default = 35]
+    pub max_expand_width: u16,
+    #[default = 6]
+    pub max_expand_height: u16,
 }

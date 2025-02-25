@@ -276,7 +276,14 @@ impl App {
     fn complete_load_table_items(&mut self, desc: TableDescription, result: AppResult<Vec<Item>>) {
         match result {
             Ok(items) => {
-                let view = View::of_table(desc, items, &self.mapper, self.theme, self.tx.clone());
+                let view = View::of_table(
+                    desc,
+                    items,
+                    &self.mapper,
+                    self.config.ui.table.clone(),
+                    self.theme,
+                    self.tx.clone(),
+                );
                 self.view_stack.push(view);
             }
             Err(e) => {

@@ -10,6 +10,7 @@ use ratatui::{
 
 use crate::{
     color::ColorTheme,
+    config::UiTableConfig,
     constant::APP_NAME,
     data::{
         list_attribute_keys, Attribute, Item, KeySchemaType, RawAttributeJsonWrapper, RawJsonItem,
@@ -24,11 +25,7 @@ use crate::{
     widget::{ScrollLines, ScrollLinesOptions, ScrollLinesState, Table, TableState},
 };
 
-const MAX_ATTRIBUTE_ITEM_WIDTH: usize = 30;
 const ELLIPSIS: &str = "...";
-
-const MAX_EXPANDED_POPUP_WIDTH: u16 = 35;
-const MAX_EXPANDED_POPUP_HEIGHT: u16 = 6;
 
 pub struct TableView {
     table_description: TableDescription,
@@ -38,6 +35,7 @@ pub struct TableView {
     attr_helps: Vec<Spans>,
     table_short_helps: Vec<SpansWithPriority>,
     attr_short_helps: Vec<SpansWithPriority>,
+    config: UiTableConfig,
     theme: ColorTheme,
     tx: Sender,
 
@@ -53,11 +51,12 @@ impl TableView {
         table_description: TableDescription,
         items: Vec<Item>,
         mapper: &UserEventMapper,
+        config: UiTableConfig,
         theme: ColorTheme,
         tx: Sender,
     ) -> Self {
         let (table_state, row_cells, header_row_cells) =
-            new_table_state(&table_description, &items, theme);
+            new_table_state(&table_description, &items, &config, theme);
         let (table_helps, attr_helps) = build_helps(mapper, theme);
         let (table_short_helps, attr_short_helps) = build_short_helps(mapper);
         let attr_scroll_lines_state =
@@ -71,6 +70,7 @@ impl TableView {
             attr_helps,
             table_short_helps,
             attr_short_helps,
+            config,
             theme,
             tx,
 
@@ -300,11 +300,12 @@ impl TableView {
         if let Some((x, y)) = self.table_state.selected_item_position() {
             let x = area.left() + x;
             let y = area.top() + y + 1; // +1 for header row
-            let w =
-                (self.attr_scroll_lines_state.max_width() as u16).min(MAX_EXPANDED_POPUP_WIDTH) + 2; // +2 for border
+            let w = (self.attr_scroll_lines_state.max_width() as u16)
+                .min(self.config.max_expand_width)
+                + 2; // +2 for border
             let h = ((area.height - 1) / 2 - 1)
                 .min(self.attr_scroll_lines_state.lines().len() as u16)
-                .min(MAX_EXPANDED_POPUP_HEIGHT)
+                .min(self.config.max_expand_height)
                 + 2; // +2 for header row
 
             #[allow(clippy::collapsible_else_if)]
@@ -405,6 +406,7 @@ impl TableView {
 fn new_table_state(
     table_description: &TableDescription,
     items: &[Item],
+    config: &UiTableConfig,
     theme: ColorTheme,
 ) -> (TableState, Vec<Vec<Cell<'static>>>, Vec<Cell<'static>>) {
     let attribute_keys = list_attribute_keys(items, &table_description.key_schema_type);
@@ -420,7 +422,7 @@ fn new_table_state(
             let (cell, width) = item
                 .attributes
                 .get(key)
-                .map(|attr| attribute_to_cell(attr, &theme))
+                .map(|attr| attribute_to_cell(attr, config, &theme))
                 .unwrap_or(undefined_cell(&theme));
             cells.push(cell);
 
@@ -433,7 +435,7 @@ fn new_table_state(
 
     let mut header_row_cells: Vec<Cell> = Vec::with_capacity(total_cols);
     for (i, key) in attribute_keys.iter().enumerate() {
-        let (cell, width) = key_to_cell(key, &theme);
+        let (cell, width) = key_to_cell(key, config, &theme);
         header_row_cells.push(cell);
         if width > max_width_vec[i] {
             max_width_vec[i] = width;
@@ -445,17 +447,21 @@ fn new_table_state(
     (table_state, row_cells, header_row_cells)
 }
 
-fn attribute_to_cell(attr: &Attribute, theme: &ColorTheme) -> (Cell<'static>, usize) {
+fn attribute_to_cell(
+    attr: &Attribute,
+    config: &UiTableConfig,
+    theme: &ColorTheme,
+) -> (Cell<'static>, usize) {
     let spans = attribute_to_spans(attr, theme);
-    let spans = cut_spans_by_width(spans, MAX_ATTRIBUTE_ITEM_WIDTH, ELLIPSIS, theme);
+    let spans = cut_spans_by_width(spans, config.max_attribute_width, ELLIPSIS, theme);
     let line = Line::from(spans);
     let width = line.width();
     (Cell::new(line), width)
 }
 
-fn key_to_cell(key: &str, theme: &ColorTheme) -> (Cell<'static>, usize) {
+fn key_to_cell(key: &str, config: &UiTableConfig, theme: &ColorTheme) -> (Cell<'static>, usize) {
     let span = key.to_string().bold();
-    let spans = cut_spans_by_width(vec![span], MAX_ATTRIBUTE_ITEM_WIDTH, ELLIPSIS, theme);
+    let spans = cut_spans_by_width(vec![span], config.max_attribute_width, ELLIPSIS, theme);
     let line = Line::from(spans);
     let width = line.width();
     (Cell::new(line), width)
