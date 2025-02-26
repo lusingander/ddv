@@ -17,6 +17,7 @@ use crate::{
     data::{Item, Table, TableDescription, TableInsight},
     error::{AppError, AppResult},
     event::{AppEvent, Receiver, Sender, UserEvent, UserEventMapper},
+    handle_user_events,
     help::{prune_spans_to_fit_width, Spans},
     view::{View, ViewStack},
     widget::LoadingDialog,
@@ -76,14 +77,9 @@ impl App {
                 AppEvent::Key(key_event) => {
                     let user_events = self.mapper.find_events(key_event);
 
-                    for user_event in &user_events {
-                        match user_event {
-                            UserEvent::Quit => {
-                                return Ok(());
-                            }
-                            _ => {
-                                continue;
-                            }
+                    handle_user_events! { user_events =>
+                        UserEvent::Quit => {
+                            return Ok(());
                         }
                     }
 

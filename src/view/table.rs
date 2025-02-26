@@ -17,6 +17,7 @@ use crate::{
         TableDescription, TableInsight,
     },
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
+    handle_user_events,
     help::{
         build_help_spans, build_short_help_spans, BuildHelpsItem, BuildShortHelpsItem, Spans,
         SpansWithPriority,
@@ -86,8 +87,7 @@ impl TableView {
 impl TableView {
     pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
         if self.attr_expanded {
-            for user_event in &user_events {
-                match user_event {
+            handle_user_events! { user_events =>
                     UserEvent::Close | UserEvent::Expand => {
                         self.close_expand_selected_attr();
                     }
@@ -127,78 +127,67 @@ impl TableView {
                     UserEvent::Help => {
                         self.open_help();
                     }
-                    _ => {
-                        continue;
-                    }
-                }
-                break;
             }
         } else {
-            for user_event in &user_events {
-                match user_event {
-                    UserEvent::Close => {
-                        self.tx.send(AppEvent::BackToBeforeView);
-                    }
-                    UserEvent::Down => {
-                        self.table_state.select_next_row();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::Up => {
-                        self.table_state.select_prev_row();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::PageDown => {
-                        self.table_state.select_next_row_page();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::PageUp => {
-                        self.table_state.select_prev_row_page();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::GoToBottom => {
-                        self.table_state.select_last_row();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::GoToTop => {
-                        self.table_state.select_first_row();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::GoToLeft => {
-                        self.table_state.select_first_col();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::GoToRight => {
-                        self.table_state.select_last_col();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::Right => {
-                        self.table_state.select_next_col();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::Left => {
-                        self.table_state.select_prev_col();
-                        self.table_state.update_table_state();
-                    }
-                    UserEvent::Confirm => {
-                        self.open_item();
-                    }
-                    UserEvent::Insight => {
-                        self.open_table_insight();
-                    }
-                    UserEvent::Expand => {
-                        self.open_expand_selected_attr();
-                    }
-                    UserEvent::CopyToClipboard => {
-                        self.copy_to_clipboard();
-                    }
-                    UserEvent::Help => {
-                        self.open_help();
-                    }
-                    _ => {
-                        continue;
-                    }
+            handle_user_events! { user_events =>
+                UserEvent::Close => {
+                    self.tx.send(AppEvent::BackToBeforeView);
                 }
-                break;
+                UserEvent::Down => {
+                    self.table_state.select_next_row();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::Up => {
+                    self.table_state.select_prev_row();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::PageDown => {
+                    self.table_state.select_next_row_page();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::PageUp => {
+                    self.table_state.select_prev_row_page();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::GoToBottom => {
+                    self.table_state.select_last_row();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::GoToTop => {
+                    self.table_state.select_first_row();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::GoToLeft => {
+                    self.table_state.select_first_col();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::GoToRight => {
+                    self.table_state.select_last_col();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::Right => {
+                    self.table_state.select_next_col();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::Left => {
+                    self.table_state.select_prev_col();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::Confirm => {
+                    self.open_item();
+                }
+                UserEvent::Insight => {
+                    self.open_table_insight();
+                }
+                UserEvent::Expand => {
+                    self.open_expand_selected_attr();
+                }
+                UserEvent::CopyToClipboard => {
+                    self.copy_to_clipboard();
+                }
+                UserEvent::Help => {
+                    self.open_help();
+                }
             }
         }
     }

@@ -7,6 +7,7 @@ mod data;
 mod error;
 mod event;
 mod help;
+mod macros;
 mod util;
 mod view;
 mod widget;

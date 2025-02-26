@@ -13,6 +13,7 @@ use crate::{
         TableDescription,
     },
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
+    handle_user_events,
     help::{
         build_help_spans, build_short_help_spans, BuildHelpsItem, BuildShortHelpsItem, Spans,
         SpansWithPriority,
@@ -78,60 +79,54 @@ impl ItemView {
 
 impl ItemView {
     pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
-        for user_event in &user_events {
-            match user_event {
-                UserEvent::Close => {
-                    self.tx.send(AppEvent::BackToBeforeView);
-                }
-                UserEvent::Down => {
-                    self.scroll_lines_state.scroll_forward();
-                }
-                UserEvent::Up => {
-                    self.scroll_lines_state.scroll_backward();
-                }
-                UserEvent::PageDown => {
-                    self.scroll_lines_state.scroll_page_forward();
-                }
-                UserEvent::PageUp => {
-                    self.scroll_lines_state.scroll_page_backward();
-                }
-                UserEvent::GoToTop => {
-                    self.scroll_lines_state.scroll_to_top();
-                }
-                UserEvent::GoToBottom => {
-                    self.scroll_lines_state.scroll_to_end();
-                }
-                UserEvent::Right => {
-                    self.scroll_lines_state.scroll_right();
-                }
-                UserEvent::Left => {
-                    self.scroll_lines_state.scroll_left();
-                }
-                UserEvent::NextPreview => {
-                    self.next_preview();
-                    self.update_preview();
-                }
-                UserEvent::PrevPreview => {
-                    self.prev_preview();
-                    self.update_preview();
-                }
-                UserEvent::ToggleWrap => {
-                    self.scroll_lines_state.toggle_wrap();
-                }
-                UserEvent::ToggleNumber => {
-                    self.scroll_lines_state.toggle_number();
-                }
-                UserEvent::CopyToClipboard => {
-                    self.copy_to_clipboard();
-                }
-                UserEvent::Help => {
-                    self.open_help();
-                }
-                _ => {
-                    continue;
-                }
+        handle_user_events! { user_events =>
+            UserEvent::Close => {
+                self.tx.send(AppEvent::BackToBeforeView);
             }
-            break;
+            UserEvent::Down => {
+                self.scroll_lines_state.scroll_forward();
+            }
+            UserEvent::Up => {
+                self.scroll_lines_state.scroll_backward();
+            }
+            UserEvent::PageDown => {
+                self.scroll_lines_state.scroll_page_forward();
+            }
+            UserEvent::PageUp => {
+                self.scroll_lines_state.scroll_page_backward();
+            }
+            UserEvent::GoToTop => {
+                self.scroll_lines_state.scroll_to_top();
+            }
+            UserEvent::GoToBottom => {
+                self.scroll_lines_state.scroll_to_end();
+            }
+            UserEvent::Right => {
+                self.scroll_lines_state.scroll_right();
+            }
+            UserEvent::Left => {
+                self.scroll_lines_state.scroll_left();
+            }
+            UserEvent::NextPreview => {
+                self.next_preview();
+                self.update_preview();
+            }
+            UserEvent::PrevPreview => {
+                self.prev_preview();
+                self.update_preview();
+            }
+            UserEvent::ToggleWrap => {
+                self.scroll_lines_state.toggle_wrap();
+            }
+            UserEvent::ToggleNumber => {
+                self.scroll_lines_state.toggle_number();
+            }
+            UserEvent::CopyToClipboard => {
+                self.copy_to_clipboard();
+            }
+            UserEvent::Help => {
+                self.open_help();
+            }
         }
     }
 

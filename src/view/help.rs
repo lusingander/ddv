@@ -11,6 +11,7 @@ use crate::{
     color::ColorTheme,
     constant::{APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION},
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
+    handle_user_events,
     help::{
         build_short_help_spans, group_spans_to_fit_width, BuildShortHelpsItem, Spans,
         SpansWithPriority,
@@ -46,19 +47,13 @@ impl HelpView {
 
 impl HelpView {
     pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
-        for user_event in &user_events {
-            match user_event {
-                UserEvent::Close => {
-                    self.tx.send(AppEvent::BackToBeforeView);
-                }
-                UserEvent::Help => {
-                    self.tx.send(AppEvent::BackToBeforeView);
-                }
-                _ => {
-                    continue;
-                }
+        handle_user_events! { user_events =>
+            UserEvent::Close => {
+                self.tx.send(AppEvent::BackToBeforeView);
             }
-            break;
+            UserEvent::Help => {
+                self.tx.send(AppEvent::BackToBeforeView);
+            }
         }
     }
 

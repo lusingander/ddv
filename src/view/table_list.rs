@@ -17,6 +17,7 @@ use crate::{
     data::{Table, TableDescription},
     error::AppError,
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
+    handle_user_events,
     help::{
         build_help_spans, build_short_help_spans, BuildHelpsItem, BuildShortHelpsItem, Spans,
         SpansWithPriority,
@@ -95,120 +96,108 @@ impl TableListView {
     pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
         match self.focused {
             Focused::List => {
-                for user_event in &user_events {
-                    match user_event {
-                        UserEvent::Down => {
-                            self.list_state.select_next();
-                            self.load_table_description();
-                            self.update_preview();
-                        }
-                        UserEvent::Up => {
-                            self.list_state.select_prev();
-                            self.load_table_description();
-                            self.update_preview();
-                        }
-                        UserEvent::PageDown => {
-                            self.list_state.select_next_page();
-                            self.load_table_description();
-                            self.update_preview();
-                        }
-                        UserEvent::PageUp => {
-                            self.list_state.select_prev_page();
-                            self.load_table_description();
-                            self.update_preview();
-                        }
-                        UserEvent::GoToBottom => {
-                            self.list_state.select_last();
-                            self.load_table_description();
-                            self.update_preview();
-                        }
-                        UserEvent::GoToTop => {
-                            self.list_state.select_first();
-                            self.load_table_description();
-                            self.update_preview();
-                        }
-                        UserEvent::NextPane => {
-                            self.next_pane();
-                        }
-                        UserEvent::NextPreview => {
-                            self.next_preview();
-                            self.update_preview();
-                        }
-                        UserEvent::PrevPreview => {
-                            self.prev_preview();
-                            self.update_preview();
-                        }
-                        UserEvent::Confirm => {
-                            self.load_table_items();
-                        }
-                        UserEvent::CopyToClipboard => {
-                            self.copy_table_name_to_clipboard();
-                        }
-                        UserEvent::Help => {
-                            self.open_help();
-                        }
-                        _ => {
-                            continue;
-                        }
+                handle_user_events! { user_events =>
+                    UserEvent::Down => {
+                        self.list_state.select_next();
+                        self.load_table_description();
+                        self.update_preview();
                     }
-                    break;
+                    UserEvent::Up => {
+                        self.list_state.select_prev();
+                        self.load_table_description();
+                        self.update_preview();
+                    }
+                    UserEvent::PageDown => {
+                        self.list_state.select_next_page();
+                        self.load_table_description();
+                        self.update_preview();
+                    }
+                    UserEvent::PageUp => {
+                        self.list_state.select_prev_page();
+                        self.load_table_description();
+                        self.update_preview();
+                    }
+                    UserEvent::GoToBottom => {
+                        self.list_state.select_last();
+                        self.load_table_description();
+                        self.update_preview();
+                    }
+                    UserEvent::GoToTop => {
+                        self.list_state.select_first();
+                        self.load_table_description();
+                        self.update_preview();
+                    }
+                    UserEvent::NextPane => {
+                        self.next_pane();
+                    }
+                    UserEvent::NextPreview => {
+                        self.next_preview();
+                        self.update_preview();
+                    }
+                    UserEvent::PrevPreview => {
+                        self.prev_preview();
+                        self.update_preview();
+                    }
+                    UserEvent::Confirm => {
+                        self.load_table_items();
+                    }
+                    UserEvent::CopyToClipboard => {
+                        self.copy_table_name_to_clipboard();
+                    }
+                    UserEvent::Help => {
+                        self.open_help();
+                    }
                 }
             }
             Focused::Detail => {
-                for user_event in &user_events {
-                    match user_event {
-                        UserEvent::Down => {
-                            self.scroll_lines_state.scroll_forward();
-                        }
-                        UserEvent::Up => {
-                            self.scroll_lines_state.scroll_backward();
-                        }
-                        UserEvent::PageDown => {
-                            self.scroll_lines_state.scroll_page_forward();
-                        }
-                        UserEvent::PageUp => {
-                            self.scroll_lines_state.scroll_page_backward();
-                        }
-                        UserEvent::GoToTop => {
-                            self.scroll_lines_state.scroll_to_top();
-                        }
-                        UserEvent::GoToBottom => {
-                            self.scroll_lines_state.scroll_to_end();
-                        }
-                        UserEvent::Right => {
-                            self.scroll_lines_state.scroll_right();
-                        }
-                        UserEvent::Left => {
-                            self.scroll_lines_state.scroll_left();
-                        }
-                        UserEvent::NextPane => {
-                            self.next_pane();
-                        }
-                        UserEvent::NextPreview => {
-                            self.next_preview();
-                            self.update_preview();
-                        }
-                        UserEvent::PrevPreview => {
-                            self.prev_preview();
-                            self.update_preview();
-                        }
-                        UserEvent::ToggleWrap => {
-                            self.scroll_lines_state.toggle_wrap();
-                        }
-                        UserEvent::ToggleNumber => {
-                            self.scroll_lines_state.toggle_number();
-                        }
-                        UserEvent::CopyToClipboard => {
-                            self.copy_table_descriptions_to_clipboard();
-                        }
-                        UserEvent::Help => {
-                            self.open_help();
-                        }
-                        _ => {
-                            continue;
-                        }
+                handle_user_events! { user_events =>
+                    UserEvent::Down => {
+                        self.scroll_lines_state.scroll_forward();
                     }
-                    break;
+                    UserEvent::Up => {
+                        self.scroll_lines_state.scroll_backward();
+                    }
+                    UserEvent::PageDown => {
+                        self.scroll_lines_state.scroll_page_forward();
+                    }
+                    UserEvent::PageUp => {
+                        self.scroll_lines_state.scroll_page_backward();
+                    }
+                    UserEvent::GoToTop => {
+                        self.scroll_lines_state.scroll_to_top();
+                    }
+                    UserEvent::GoToBottom => {
+                        self.scroll_lines_state.scroll_to_end();
+                    }
+                    UserEvent::Right => {
+                        self.scroll_lines_state.scroll_right();
+                    }
+                    UserEvent::Left => {
+                        self.scroll_lines_state.scroll_left();
+                    }
+                    UserEvent::NextPane => {
+                        self.next_pane();
+                    }
+                    UserEvent::NextPreview => {
+                        self.next_preview();
+                        self.update_preview();
+                    }
+                    UserEvent::PrevPreview => {
+                        self.prev_preview();
+                        self.update_preview();
+                    }
+                    UserEvent::ToggleWrap => {
+                        self.scroll_lines_state.toggle_wrap();
+                    }
+                    UserEvent::ToggleNumber => {
+                        self.scroll_lines_state.toggle_number();
+                    }
+                    UserEvent::CopyToClipboard => {
+                        self.copy_table_descriptions_to_clipboard();
+                    }
+                    UserEvent::Help => {
+                        self.open_help();
+                    }
                 }
             }
         }
