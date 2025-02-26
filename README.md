@@ -81,6 +81,30 @@ The basic key bindings are as follows:
 
 Detailed operations on each view can be displayed by pressing `?` key.
 
+### Config
+
+If the `DDV_CONFIG` environment variable specifies the path to the config file, the config will be loaded.
+
+The config file uses the following format:
+
+```toml
+[ui.table_list]
+# The width of the table list.
+# type: u16
+list_width = 30
+
+[ui.table]
+# The maximum column width for each attributes.
+# type: u16
+max_attribute_width = 30
+# The maximum width of the expansion.
+# type: u16
+max_expand_width = 35
+# The maximum height of the expansion.
+# type: u16
+max_expand_height = 6
+```
+
 ## Screenshots
 
 <img src="./img/table-list-list.png" width=400> <img src="./img/table-list-detail-kv.png" width=400> <img src="./img/table-list-detail-json.png" width=400> <img src="./img/table.png" width=400> <img src="./img/table-expand-attr.png" width=400> <img src="./img/item-kv.png" width=400> <img src="./img/item-plain-json.png" width=400> <img src="./img/item-raw-json.png" width=400> <img src="./img/table-insight.png" width=400>
