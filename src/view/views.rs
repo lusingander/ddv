@@ -22,14 +22,14 @@ pub enum View {
 }
 
 impl View {
-    pub fn handle_user_key_event(&mut self, user_event: Option<UserEvent>, key_event: KeyEvent) {
+    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, key_event: KeyEvent) {
         match self {
-            View::Init(view) => view.handle_user_key_event(user_event, key_event),
-            View::TableList(view) => view.handle_user_key_event(user_event, key_event),
-            View::Table(view) => view.handle_user_key_event(user_event, key_event),
-            View::Item(view) => view.handle_user_key_event(user_event, key_event),
-            View::TableInsight(view) => view.handle_user_key_event(user_event, key_event),
-            View::Help(view) => view.handle_user_key_event(user_event, key_event),
+            View::Init(view) => view.handle_user_key_event(user_events, key_event),
+            View::TableList(view) => view.handle_user_key_event(user_events, key_event),
+            View::Table(view) => view.handle_user_key_event(user_events, key_event),
+            View::Item(view) => view.handle_user_key_event(user_events, key_event),
+            View::TableInsight(view) => view.handle_user_key_event(user_events, key_event),
+            View::Help(view) => view.handle_user_key_event(user_events, key_event),
         }
     }
 

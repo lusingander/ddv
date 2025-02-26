@@ -139,16 +139,11 @@ impl UserEventMapper {
         UserEventMapper { map }
     }
 
-    pub fn find_first_event(&self, e: KeyEvent) -> Option<UserEvent> {
+    pub fn find_events(&self, e: KeyEvent) -> Vec<UserEvent> {
         self.map
             .iter()
-            .find_map(|(k, v)| if *k == e { Some(*v) } else { None })
-    }
-
-    pub fn find_first_key(&self, e: UserEvent) -> Option<KeyEvent> {
-        self.map
-            .iter()
-            .find_map(|(k, v)| if *v == e { Some(*k) } else { None })
+            .filter_map(|(k, v)| if *k == e { Some(*v) } else { None })
+            .collect()
     }
 
     pub fn find_keys(&self, e: UserEvent) -> Vec<KeyEvent> {
@@ -156,6 +151,12 @@ impl UserEventMapper {
             .iter()
             .filter_map(|(k, v)| if *v == e { Some(*k) } else { None })
             .collect()
+    }
+
+    pub fn find_first_key(&self, e: UserEvent) -> Option<KeyEvent> {
+        self.map
+            .iter()
+            .find_map(|(k, v)| if *v == e { Some(*k) } else { None })
     }
 }
 

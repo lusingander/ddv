@@ -45,8 +45,8 @@ impl HelpView {
 }
 
 impl HelpView {
-    pub fn handle_user_key_event(&mut self, user_event: Option<UserEvent>, _key_event: KeyEvent) {
-        if let Some(user_event) = user_event {
+    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
+        for user_event in &user_events {
             match user_event {
                 UserEvent::Close => {
                     self.tx.send(AppEvent::BackToBeforeView);
@@ -54,8 +54,11 @@ impl HelpView {
                 UserEvent::Help => {
                     self.tx.send(AppEvent::BackToBeforeView);
                 }
-                _ => {}
+                _ => {
+                    continue;
+                }
             }
+            break;
         }
     }
 

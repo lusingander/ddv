@@ -74,10 +74,17 @@ impl App {
             terminal.draw(|f| self.render(f))?;
             match rx.recv() {
                 AppEvent::Key(key_event) => {
-                    let user_event = self.mapper.find_first_event(key_event);
+                    let user_events = self.mapper.find_events(key_event);
 
-                    if let Some(UserEvent::Quit) = user_event {
-                        return Ok(());
+                    for user_event in &user_events {
+                        match user_event {
+                            UserEvent::Quit => {
+                                return Ok(());
+                            }
+                            _ => {
+                                continue;
+                            }
+                        }
                     }
 
                     if self.loading {
@@ -105,7 +112,7 @@ impl App {
 
                     self.view_stack
                         .current_view_mut()
-                        .handle_user_key_event(user_event, key_event);
+                        .handle_user_key_event(user_events, key_event);
                 }
                 AppEvent::Resize(w, h) => {
                     let _ = (w, h);

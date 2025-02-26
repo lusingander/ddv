@@ -18,7 +18,7 @@ impl InitView {
 }
 
 impl InitView {
-    pub fn handle_user_key_event(&mut self, _user_event: Option<UserEvent>, _key_event: KeyEvent) {}
+    pub fn handle_user_key_event(&mut self, _user_events: Vec<UserEvent>, _key_event: KeyEvent) {}
 
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
         let block = Block::bordered().fg(self.theme.fg).bg(self.theme.bg);

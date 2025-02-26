@@ -84,9 +84,9 @@ impl TableView {
 }
 
 impl TableView {
-    pub fn handle_user_key_event(&mut self, user_event: Option<UserEvent>, _key_event: KeyEvent) {
-        if let Some(user_event) = user_event {
-            if self.attr_expanded {
+    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
+        if self.attr_expanded {
+            for user_event in &user_events {
                 match user_event {
                     UserEvent::Close | UserEvent::Expand => {
                         self.close_expand_selected_attr();
@@ -127,9 +127,14 @@ impl TableView {
                     UserEvent::Help => {
                         self.open_help();
                     }
-                    _ => {}
+                    _ => {
+                        continue;
+                    }
                 }
-            } else {
+                break;
+            }
+        } else {
+            for user_event in &user_events {
                 match user_event {
                     UserEvent::Close => {
                         self.tx.send(AppEvent::BackToBeforeView);
@@ -189,8 +194,11 @@ impl TableView {
                     UserEvent::Help => {
                         self.open_help();
                     }
-                    _ => {}
+                    _ => {
+                        continue;
+                    }
                 }
+                break;
             }
         }
     }
