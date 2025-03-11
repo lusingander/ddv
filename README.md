@@ -8,6 +8,9 @@ Terminal DynamoDB Viewer ⚡️
 
 ## About
 
+> [!NOTE]
+> This application is in early development. It is missing a lot of features and behaviors.
+
 DDV is a TUI application to view Amazon DynamoDB in the terminal.
 
 > [!WARNING]
