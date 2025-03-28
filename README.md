@@ -39,6 +39,12 @@ $ cargo install --locked ddv
 $ brew install lusingander/tap/ddv
 ```
 
+### [X-CMD](https://x-cmd.com/)
+
+```
+$ x install ddv
+```
+
 ### Downloading binary
 
 You can download pre-compiled binaries from [releases](https://github.com/lusingander/ddv/releases).
