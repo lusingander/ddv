@@ -171,7 +171,7 @@ pub fn build_help_spans(
                     .map(|key| {
                         vec![
                             "<".into(),
-                            key_event_to_string(key, true).fg(theme.help_key_fg).bold(),
+                            key_event_to_string(key, false).fg(theme.help_key_fg).bold(),
                             ">".into(),
                         ]
                     })
