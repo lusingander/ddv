@@ -188,7 +188,7 @@ impl App {
                     .fg(self.theme.notification_warning),
             ),
             Status::NotificationError(msg) => Line::from(
-                format!("ERROR: {}", msg)
+                format!("ERROR: {msg}")
                     .add_modifier(Modifier::BOLD)
                     .fg(self.theme.notification_error),
             ),
@@ -322,7 +322,7 @@ impl App {
     fn copy_to_clipboard(&self, name: String, content: String) {
         match crate::util::copy_to_clipboard(&content) {
             Ok(_) => {
-                let msg = format!("Copied {} to clipboard successfully", name);
+                let msg = format!("Copied {name} to clipboard successfully");
                 self.tx.send(AppEvent::NotifySuccess(msg));
             }
             Err(e) => {

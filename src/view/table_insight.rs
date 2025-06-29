@@ -193,5 +193,5 @@ fn format_ratio(n: usize, total: usize) -> String {
     if let Some(r) = ratio.strip_suffix(".0") {
         ratio = r.to_string()
     };
-    format!("{}%", ratio)
+    format!("{ratio}%")
 }

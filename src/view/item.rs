@@ -241,7 +241,7 @@ fn get_key_value_lines(
     for key in attribute_keys {
         if let Some(attr) = item.attributes.get(&key) {
             let mut spans = vec![];
-            spans.push(format!("{:>w$}", key, w = max_key_width).bold());
+            spans.push(format!("{key:>max_key_width$}").bold());
             spans.push(
                 format!(" {:<w$} ", attr.as_type_str(), w = max_attr_width)
                     .fg(theme.item_attribute_type_fg)

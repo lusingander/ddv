@@ -301,7 +301,7 @@ impl TableListView {
             .enumerate()
             .map(|(i, t)| {
                 let name = console::truncate_str(&t.name, item_width, "..");
-                let line = Line::raw(format!(" {:item_width$} ", name));
+                let line = Line::raw(format!(" {name:item_width$} "));
                 let mut style = Style::default();
                 if i + self.list_state.offset == self.list_state.selected {
                     style = style.fg(self.theme.selected_fg);
@@ -315,7 +315,7 @@ impl TableListView {
             })
             .collect();
         let list = ScrollList::new(items)
-            .title(format!(" {} ", APP_NAME))
+            .title(format!(" {APP_NAME} "))
             .theme(&self.theme)
             .focused(self.focused == Focused::List);
         f.render_stateful_widget(list, area, &mut self.list_state);

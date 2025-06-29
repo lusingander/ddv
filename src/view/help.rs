@@ -59,7 +59,7 @@ impl HelpView {
 
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
         let block = Block::bordered()
-            .title_top(Line::from(format!(" {} ", APP_NAME)).left_aligned())
+            .title_top(Line::from(format!(" {APP_NAME} ")).left_aligned())
             .padding(Padding::horizontal(1));
 
         let content_area = block.inner(area);
@@ -94,8 +94,8 @@ fn build_short_helps(mapper: &UserEventMapper) -> Vec<SpansWithPriority> {
 impl HelpView {
     fn render_about(&self, f: &mut Frame, area: Rect) {
         let lines = vec![
-            Line::from(format!("{} - {}", APP_NAME, APP_DESCRIPTION)),
-            Line::from(format!("Version: {}", APP_VERSION)),
+            Line::from(format!("{APP_NAME} - {APP_DESCRIPTION}")),
+            Line::from(format!("Version: {APP_VERSION}")),
             Line::from(APP_HOMEPAGE.fg(self.theme.help_link_fg)),
         ];
         let content = with_empty_lines(lines);

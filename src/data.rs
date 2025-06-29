@@ -480,7 +480,7 @@ pub fn to_key_string(item: &Item, schema: &KeySchemaType) -> String {
         KeySchemaType::HashRange(key1, key2) => {
             let key1_str = item.attributes.get(key1).unwrap().to_simple_string();
             let key2_str = item.attributes.get(key2).unwrap().to_simple_string();
-            format!("{} / {}", key1_str, key2_str)
+            format!("{key1_str} / {key2_str}")
         }
     }
 }

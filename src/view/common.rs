@@ -16,7 +16,7 @@ use crate::{color::ColorTheme, data::Attribute, widget::ScrollLinesState};
 pub fn attribute_to_spans(attr: &Attribute, theme: &ColorTheme) -> Vec<Span<'static>> {
     match attr {
         Attribute::S(s) => {
-            let text = format!("\"{}\"", s);
+            let text = format!("\"{s}\"");
             vec![Span::from(text).fg(theme.cell_string_fg)]
         }
         Attribute::N(n) => {
@@ -28,7 +28,7 @@ pub fn attribute_to_spans(attr: &Attribute, theme: &ColorTheme) -> Vec<Span<'sta
             vec![Span::from(text).fg(theme.cell_binary_fg)]
         }
         Attribute::BOOL(b) => {
-            let text = format!("{}", b);
+            let text = format!("{b}");
             vec![Span::from(text).fg(theme.cell_bool_fg)]
         }
         Attribute::NULL => {
@@ -55,7 +55,7 @@ pub fn attribute_to_spans(attr: &Attribute, theme: &ColorTheme) -> Vec<Span<'sta
             let mut spans = Vec::new();
             spans.push(Span::from("{"));
             for (i, (k, v)) in map.iter().enumerate() {
-                spans.push(Span::from(format!("{}: ", k)));
+                spans.push(Span::from(format!("{k}: ")));
                 spans.extend(attribute_to_spans(v, theme));
                 if i < map.len() - 1 {
                     spans.push(Span::from(", "));
@@ -69,7 +69,7 @@ pub fn attribute_to_spans(attr: &Attribute, theme: &ColorTheme) -> Vec<Span<'sta
             spans.push(Span::from("["));
             for (i, s) in ss
                 .iter()
-                .map(|s| Span::from(format!("\"{}\"", s)).fg(theme.cell_string_fg))
+                .map(|s| Span::from(format!("\"{s}\"")).fg(theme.cell_string_fg))
                 .enumerate()
             {
                 spans.push(s);

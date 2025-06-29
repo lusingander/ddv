@@ -308,7 +308,7 @@ fn to_key_schema_type(elements: Vec<KeySchemaElement>) -> KeySchemaType {
         (Some(hash_key), Some(range_key)) => KeySchemaType::HashRange(hash_key, range_key),
         (Some(hash_key), None) => KeySchemaType::Hash(hash_key),
         (hash_key, range_key) => {
-            panic!("unexpected key schema: ({:?}, {:?})", hash_key, range_key)
+            panic!("unexpected key schema: ({hash_key:?}, {range_key:?})")
         }
     }
 }
