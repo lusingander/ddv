@@ -434,7 +434,7 @@ impl Serialize for Attribute {
 pub struct RawAttributeJsonWrapper<'a>(&'a Attribute);
 
 impl RawAttributeJsonWrapper<'_> {
-    pub fn new(attr: &Attribute) -> RawAttributeJsonWrapper {
+    pub fn new(attr: &'_ Attribute) -> RawAttributeJsonWrapper<'_> {
         RawAttributeJsonWrapper(attr)
     }
 }
