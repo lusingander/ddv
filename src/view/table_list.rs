@@ -15,7 +15,6 @@ use crate::{
     config::UiTableListConfig,
     constant::APP_NAME,
     data::{Table, TableDescription},
-    error::AppError,
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
     handle_user_events,
     help::{
@@ -350,12 +349,7 @@ impl TableListView {
 
     fn load_table_items(&self) {
         if let Some(desc) = self.current_selected_table_description() {
-            if desc.item_count > 0 {
-                self.tx.send(AppEvent::LoadTableItems(desc.clone()));
-            } else {
-                let msg = format!("Table {} has no items", desc.table_name);
-                self.tx.send(AppEvent::NotifyWarning(AppError::msg(msg)));
-            }
+            self.tx.send(AppEvent::LoadTableItems(desc.clone()));
         }
     }
 

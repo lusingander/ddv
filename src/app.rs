@@ -278,6 +278,10 @@ impl App {
 
     fn complete_load_table_items(&mut self, desc: TableDescription, result: AppResult<Vec<Item>>) {
         match result {
+            Ok(items) if items.is_empty() => {
+                let msg = format!("Table {} has no items", desc.table_name);
+                self.tx.send(AppEvent::NotifyWarning(AppError::msg(msg)));
+            }
             Ok(items) => {
                 let view = View::of_table(
                     desc,
