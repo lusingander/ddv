@@ -182,6 +182,14 @@ impl TableView {
                 UserEvent::Expand => {
                     self.open_expand_selected_attr();
                 }
+                UserEvent::Widen => {
+                    self.table_state.widen_col();
+                    self.recalculate_cells();
+                }
+                UserEvent::Narrow => {
+                    self.table_state.narrow_col();
+                    self.recalculate_cells();
+                }
                 UserEvent::CopyToClipboard => {
                     self.copy_to_clipboard();
                 }
@@ -363,6 +371,24 @@ impl TableView {
         }
     }
 
+    fn recalculate_cells(&mut self) {
+        if let Some(col) = self.table_state.selected_col {
+            let attribute_keys =
+                list_attribute_keys(&self.items, &self.table_description.key_schema_type);
+            let max_attribute_width = self.table_state.selected_col_width().unwrap();
+            for (i, cells) in self.row_cells.iter_mut().enumerate() {
+                let item = &self.items[i];
+                let key = &attribute_keys[col];
+                let (cell, _) = item
+                    .attributes
+                    .get(key)
+                    .map(|attr| attribute_to_cell(attr, max_attribute_width, &self.theme))
+                    .unwrap_or(undefined_cell(&self.theme));
+                cells[col] = cell;
+            }
+        }
+    }
+
     fn close_expand_selected_attr(&mut self) {
         self.attr_expanded = false;
     }
@@ -419,7 +445,7 @@ fn new_table_state(
             let (cell, width) = item
                 .attributes
                 .get(key)
-                .map(|attr| attribute_to_cell(attr, config, &theme))
+                .map(|attr| attribute_to_cell(attr, config.max_attribute_width, &theme))
                 .unwrap_or(undefined_cell(&theme));
             cells.push(cell);
 
@@ -446,11 +472,11 @@ fn new_table_state(
 
 fn attribute_to_cell(
     attr: &Attribute,
-    config: &UiTableConfig,
+    max_attribute_width: usize,
     theme: &ColorTheme,
 ) -> (Cell<'static>, usize) {
     let spans = attribute_to_spans(attr, theme);
-    let spans = cut_spans_by_width(spans, config.max_attribute_width, ELLIPSIS, theme);
+    let spans = cut_spans_by_width(spans, max_attribute_width, ELLIPSIS, theme);
     let line = Line::from(spans);
     let width = line.width();
     (Cell::new(line), width)

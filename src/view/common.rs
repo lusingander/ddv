@@ -136,14 +136,27 @@ pub fn cut_spans_by_width<'a>(
     theme: &ColorTheme,
 ) -> Vec<Span<'a>> {
     let total_spans = spans.len();
+    let span_widths: Vec<usize> = spans
+        .iter()
+        .map(|s| console::measure_text_width(&s.content))
+        .collect();
+
+    if span_widths.iter().sum::<usize>() <= max_width {
+        return spans;
+    }
+
+    let ellipsis_width = console::measure_text_width(ellipsis);
+    if ellipsis_width >= max_width {
+        return vec![Span::from(ellipsis).fg(theme.cell_ellipsis_fg)];
+    }
 
     let mut rest_w = max_width;
-    rest_w -= console::measure_text_width(ellipsis);
+    rest_w -= ellipsis_width;
 
     let mut ret = Vec::new();
     let mut exceed = false;
-    for span in spans {
-        let w = console::measure_text_width(&span.content);
+    for (i, span) in spans.into_iter().enumerate() {
+        let w = span_widths[i];
         ret.push(span);
         if w > rest_w {
             exceed = true;
