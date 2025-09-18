@@ -231,6 +231,24 @@ impl TableState {
             (x as u16, y as u16)
         })
     }
+
+    pub fn widen_col(&mut self) {
+        if let Some(col) = self.selected_col {
+            self.col_widths[col] += 1;
+        }
+    }
+
+    pub fn narrow_col(&mut self) {
+        if let Some(col) = self.selected_col {
+            if self.col_widths[col] > 1 {
+                self.col_widths[col] -= 1;
+            }
+        }
+    }
+
+    pub fn selected_col_width(&self) -> Option<usize> {
+        self.selected_col.map(|col| self.col_widths[col])
+    }
 }
 
 #[derive(Debug, Default)]
