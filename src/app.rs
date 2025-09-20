@@ -278,20 +278,25 @@ impl App {
 
     fn complete_load_table_items(&mut self, desc: TableDescription, result: AppResult<Vec<Item>>) {
         match result {
-            Ok(items) if items.is_empty() => {
-                let msg = format!("Table {} has no items", desc.table_name);
-                self.tx.send(AppEvent::NotifyWarning(AppError::msg(msg)));
-            }
             Ok(items) => {
-                let view = View::of_table(
-                    desc,
-                    items,
-                    &self.mapper,
-                    self.config.ui.table.clone(),
-                    self.theme,
-                    self.tx.clone(),
-                );
-                self.view_stack.push(view);
+                if matches!(self.view_stack.current_view(), View::Table(_)) {
+                    // when reloading in table view, pop current table view first
+                    self.view_stack.pop();
+                }
+                if items.is_empty() {
+                    let msg = format!("Table {} has no items", desc.table_name);
+                    self.tx.send(AppEvent::NotifyWarning(AppError::msg(msg)));
+                } else {
+                    let view = View::of_table(
+                        desc,
+                        items,
+                        &self.mapper,
+                        self.config.ui.table.clone(),
+                        self.theme,
+                        self.tx.clone(),
+                    );
+                    self.view_stack.push(view);
+                }
             }
             Err(e) => {
                 self.tx.send(AppEvent::NotifyError(e));
