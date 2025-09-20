@@ -121,6 +121,9 @@ impl TableView {
                     UserEvent::ToggleNumber => {
                         self.attr_scroll_lines_state.toggle_number();
                     }
+                    UserEvent::Reload => {
+                        self.reload_table();
+                    }
                     UserEvent::CopyToClipboard => {
                         self.copy_to_clipboard();
                     }
@@ -189,6 +192,9 @@ impl TableView {
                 UserEvent::Narrow => {
                     self.table_state.narrow_col();
                     self.recalculate_cells();
+                }
+                UserEvent::Reload => {
+                    self.reload_table();
                 }
                 UserEvent::CopyToClipboard => {
                     self.copy_to_clipboard();
@@ -394,6 +400,11 @@ impl TableView {
 
     fn close_expand_selected_attr(&mut self) {
         self.attr_expanded = false;
+    }
+
+    fn reload_table(&self) {
+        let desc = self.table_description.clone();
+        self.tx.send(AppEvent::LoadTableItems(desc));
     }
 
     fn copy_to_clipboard(&self) {
