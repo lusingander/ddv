@@ -1,6 +1,6 @@
 [package]
 name = "ddv"
-version = "0.1.0"
+version = "0.2.0"
 description = "Terminal DynamoDB Viewer"
 authors = ["Kyosuke Fujimoto <kyoro.f@gmail.com>"]
 homepage = "https://github.com/lusingander/ddv"
