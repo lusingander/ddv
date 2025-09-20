@@ -98,6 +98,7 @@ pub enum UserEvent {
     ToggleNumber,
     Widen,
     Narrow,
+    Reload,
     CopyToClipboard,
     Help,
 }
@@ -137,6 +138,7 @@ impl UserEventMapper {
             (KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE), UserEvent::ToggleNumber),
             (KeyEvent::new(KeyCode::Char('+'), KeyModifiers::NONE), UserEvent::Widen),
             (KeyEvent::new(KeyCode::Char('-'), KeyModifiers::NONE), UserEvent::Narrow),
+            (KeyEvent::new(KeyCode::Char('R'), KeyModifiers::NONE), UserEvent::Reload),
             (KeyEvent::new(KeyCode::Char('c'), KeyModifiers::NONE), UserEvent::CopyToClipboard),
             (KeyEvent::new(KeyCode::Char('?'), KeyModifiers::NONE), UserEvent::Help),
         ];
