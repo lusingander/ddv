@@ -254,6 +254,7 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<
         BuildHelpsItem::new(UserEvent::Insight, "Open table insight"),
         BuildHelpsItem::new(UserEvent::Widen, "Widen selected column"),
         BuildHelpsItem::new(UserEvent::Narrow, "Narrow selected column"),
+        BuildHelpsItem::new(UserEvent::Reload, "Reload table data"),
         BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy selected item"),
     ];
     #[rustfmt::skip]
@@ -270,6 +271,7 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<
         BuildHelpsItem::new(UserEvent::Left, "Scroll left"),
         BuildHelpsItem::new(UserEvent::ToggleWrap, "Toggle wrap"),
         BuildHelpsItem::new(UserEvent::ToggleNumber, "Toggle number"),
+        BuildHelpsItem::new(UserEvent::Reload, "Reload table data"),
         BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy selected item"),
     ];
     (
@@ -285,12 +287,13 @@ fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<S
         BuildShortHelpsItem::single(UserEvent::Close, "Back", 1),
         BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select row", 5),
         BuildShortHelpsItem::group(vec![UserEvent::Left, UserEvent::Right], "Select col", 6),
-        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 9),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 10),
         BuildShortHelpsItem::single(UserEvent::Confirm, "Open", 2),
         BuildShortHelpsItem::single(UserEvent::Expand, "Expand", 4),
         BuildShortHelpsItem::single(UserEvent::Insight, "Insight", 3),
         BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 7),
-        BuildShortHelpsItem::group(vec![UserEvent::Widen, UserEvent::Narrow], "Widen/Narrow", 8),
+        BuildShortHelpsItem::group(vec![UserEvent::Widen, UserEvent::Narrow], "Widen/Narrow", 9),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 8),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     #[rustfmt::skip]
@@ -298,9 +301,10 @@ fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<S
         BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
         BuildShortHelpsItem::single(UserEvent::Close, "Close", 1),
         BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Scroll", 2),
-        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 4),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 6),
         BuildShortHelpsItem::group(vec![UserEvent::ToggleWrap, UserEvent::ToggleNumber], "Toggle wrap/number", 5),
         BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 3),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 4),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     (
