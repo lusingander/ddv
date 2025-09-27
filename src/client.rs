@@ -230,9 +230,9 @@ impl From<AwsLocalSecondaryIndexDescription> for LocalSecondaryIndexDescription 
         let index_name = value.index_name.unwrap();
         let key_schema = to_key_schema(value.key_schema.unwrap());
         let projection = value.projection.unwrap().into();
-        let index_size_bytes = value.index_size_bytes.unwrap() as u64;
-        let item_count = value.item_count.unwrap() as u64;
-        let index_arn = value.index_arn.unwrap();
+        let index_size_bytes = value.index_size_bytes.unwrap_or(0) as u64;
+        let item_count = value.item_count.unwrap_or(0) as u64;
+        let index_arn = value.index_arn.unwrap_or("".to_string());
         LocalSecondaryIndexDescription {
             index_name,
             key_schema,
