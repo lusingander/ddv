@@ -22,6 +22,8 @@ impl Config {
 #[optional(derives = [Deserialize])]
 #[derive(Debug, Clone, SmartDefault)]
 pub struct Config {
+    #[default = "us-east-1"]
+    pub default_region: String,
     #[nested]
     pub ui: UiConfig,
 }
