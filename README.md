@@ -97,6 +97,10 @@ If the `DDV_CONFIG` environment variable specifies the path to the config file, 
 The config file uses the following format:
 
 ```toml
+# The default region to use if the region cannot be obtained from the command line options or AWS settings.
+# type: string
+default_region = "us-east-1"
+
 [ui.table_list]
 # The width of the table list.
 # type: u16
