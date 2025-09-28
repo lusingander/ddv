@@ -27,8 +27,6 @@ use crate::{
     error::{AppError, AppResult},
 };
 
-const DEFAULT_REGION: &str = "ap-northeast-1";
-
 pub struct Client {
     client: aws_sdk_dynamodb::Client,
 }
@@ -38,6 +36,7 @@ impl Client {
         region: Option<String>,
         endpoint_url: Option<String>,
         profile: Option<String>,
+        default_region_fallback: String,
     ) -> Client {
         let mut region_builder = default_provider::region::Builder::default();
         if let Some(profile) = &profile {
@@ -45,7 +44,7 @@ impl Client {
         }
         let region_provider = RegionProviderChain::first_try(region.map(Region::new))
             .or_else(region_builder.build())
-            .or_else(Region::new(DEFAULT_REGION));
+            .or_else(Region::new(default_region_fallback));
 
         let mut config_loader =
             aws_config::defaults(BehaviorVersion::latest()).region(region_provider);
