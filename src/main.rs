@@ -40,7 +40,13 @@ async fn main() -> std::io::Result<()> {
     let theme = ColorTheme::default();
     let mapper = UserEventMapper::new();
 
-    let client = Client::new(args.region, args.endpoint_url, args.profile).await;
+    let client = Client::new(
+        args.region,
+        args.endpoint_url,
+        args.profile,
+        config.default_region.clone(),
+    )
+    .await;
     let (tx, rx) = event::init();
 
     tx.send(event::AppEvent::Initialize);
