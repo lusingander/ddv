@@ -205,8 +205,8 @@ impl ItemView {
 
         let lines = match self.preview_type {
             PreviewType::KeyValue => get_key_value_lines(item, schema, theme),
-            PreviewType::PlainJson => get_plain_json_lines(item, schema),
-            PreviewType::RawJson => get_raw_json_lines(item, schema),
+            PreviewType::PlainJson => get_plain_json_lines(item, schema, theme),
+            PreviewType::RawJson => get_raw_json_lines(item, schema, theme),
         };
         let options = self.scroll_lines_state.current_options();
 
@@ -255,14 +255,22 @@ fn get_key_value_lines(
     lines
 }
 
-fn get_plain_json_lines(item: &Item, schema: &KeySchemaType) -> Vec<Line<'static>> {
+fn get_plain_json_lines(
+    item: &Item,
+    schema: &KeySchemaType,
+    theme: &ColorTheme,
+) -> Vec<Line<'static>> {
     let json_item = PlainJsonItem::new(item, schema);
     let json_str = serde_json::to_string_pretty(&json_item).unwrap();
-    to_highlighted_lines(&json_str)
+    to_highlighted_lines(&json_str, theme)
 }
 
-fn get_raw_json_lines(item: &Item, schema: &KeySchemaType) -> Vec<Line<'static>> {
+fn get_raw_json_lines(
+    item: &Item,
+    schema: &KeySchemaType,
+    theme: &ColorTheme,
+) -> Vec<Line<'static>> {
     let json_item = RawJsonItem::new(item, schema);
     let json_str = serde_json::to_string_pretty(&json_item).unwrap();
-    to_highlighted_lines(&json_str)
+    to_highlighted_lines(&json_str, theme)
 }
