@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use ansi_to_tui::IntoText as _;
 use once_cell::sync::Lazy;
 use ratatui::{
@@ -6,8 +8,10 @@ use ratatui::{
 };
 use syntect::{
     easy::HighlightLines,
-    highlighting::{Theme, ThemeSet},
-    parsing::{SyntaxReference, SyntaxSet},
+    highlighting::{
+        Color, ScopeSelectors, StyleModifier, Theme, ThemeItem, ThemeSet, ThemeSettings,
+    },
+    parsing::{SyntaxDefinition, SyntaxReference, SyntaxSet, SyntaxSetBuilder},
     util::{as_24_bit_terminal_escaped, LinesWithEndings},
 };
 
@@ -178,14 +182,6 @@ pub fn cut_spans_by_width<'a>(
     ret
 }
 
-static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
-static DEFAULT_THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
-
-static JSON_SYNTAX: Lazy<&SyntaxReference> =
-    Lazy::new(|| SYNTAX_SET.find_syntax_by_name("JSON").unwrap());
-static THEME: Lazy<&Theme> =
-    Lazy::new(|| DEFAULT_THEME_SET.themes.get("base16-ocean.dark").unwrap());
-
 pub fn to_highlighted_lines(json_str: &str) -> Vec<Line<'static>> {
     let mut h = HighlightLines::new(&JSON_SYNTAX, &THEME);
     let s = LinesWithEndings::from(json_str)
@@ -198,3 +194,111 @@ pub fn to_highlighted_lines(json_str: &str) -> Vec<Line<'static>> {
         .join("");
     s.into_text().unwrap().into_iter().collect()
 }
+
+static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(|| {
+    let mut builder = SyntaxSetBuilder::new();
+    let syntax = SyntaxDefinition::load_from_str(CUSTOM_JSON_SYNTAX_DEFINITON, true, None).unwrap();
+    builder.add(syntax);
+    builder.build()
+});
+
+static JSON_SYNTAX: Lazy<&SyntaxReference> =
+    Lazy::new(|| SYNTAX_SET.find_syntax_by_name("JSON").unwrap());
+
+static THEME: Lazy<Theme> = Lazy::new(custom_json_theme);
+
+fn custom_json_theme() -> Theme {
+    let mut theme = Theme {
+        settings: ThemeSettings {
+            foreground: Some(syntect_color(255, 255, 255)),
+            ..ThemeSettings::default()
+        },
+        ..Theme::default()
+    };
+    theme
+        .scopes
+        .push(theme_item("constant.numeric.json", 0, 255, 0));
+    theme
+        .scopes
+        .push(theme_item("string.value.json", 255, 0, 255));
+    theme
+        .scopes
+        .push(theme_item("constant.language.boolean.json", 0, 0, 255));
+    theme
+        .scopes
+        .push(theme_item("constant.language.null.json", 0, 255, 255));
+    theme
+}
+
+fn theme_item(scope: &str, r: u8, g: u8, b: u8) -> ThemeItem {
+    ThemeItem {
+        scope: ScopeSelectors::from_str(scope).unwrap(),
+        style: StyleModifier {
+            foreground: Some(syntect_color(r, g, b)),
+            ..StyleModifier::default()
+        },
+    }
+}
+
+fn syntect_color(r: u8, g: u8, b: u8) -> Color {
+    Color { r, g, b, a: 255 }
+}
+
+const CUSTOM_JSON_SYNTAX_DEFINITON: &str = r###"
+%YAML 1.2
+---
+name: JSON
+file_extensions:
+  - json
+scope: source.json
+
+contexts:
+  main:
+    - match: '"'
+      scope: punctuation.definition.string.begin.json
+      push: string
+    - match: '\b(true|false)\b'
+      scope: constant.language.boolean.json
+    - match: '\bnull\b'
+      scope: constant.language.null.json
+    - match: '[0-9]+(\.[0-9]+)?'
+      scope: constant.numeric.json
+    - match: '[{}\[\],:]'
+      scope: punctuation.separator.json
+
+  string:
+    - meta_scope: string.quoted.double.json
+    - match: '":'
+      scope: punctuation.separator.keyvalue.json
+      set: after_key
+    - match: '"'
+      scope: punctuation.definition.string.end.json
+      pop: true
+    - match: '\\.'
+      scope: constant.character.escape.json
+
+  after_key:
+    - match: '"'
+      scope: punctuation.definition.string.begin.json
+      set: string_value
+    - match: '\b(true|false)\b'
+      scope: constant.language.boolean.json
+      pop: true
+    - match: '\bnull\b'
+      scope: constant.language.null.json
+      pop: true
+    - match: '[0-9]+(\.[0-9]+)?'
+      scope: constant.numeric.json
+      pop: true
+    - match: '[{}\[\],]'
+      scope: punctuation.separator.json
+      pop: true
+
+  string_value:
+    - meta_scope: string.value.json
+    - match: '"'
+      scope: punctuation.definition.string.end.json
+      pop: true
+    - match: '\\.'
+      scope: constant.character.escape.json
+"###;
