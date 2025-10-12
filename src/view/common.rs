@@ -3,12 +3,12 @@ use std::str::FromStr;
 use ansi_to_tui::IntoText as _;
 use once_cell::sync::Lazy;
 use ratatui::{
-    style::Stylize,
+    style::{Color as RatatuiColor, Stylize},
     text::{Line, Span},
 };
 use syntect::{
     easy::HighlightLines,
-    highlighting::{Color, ScopeSelectors, StyleModifier, Theme, ThemeItem},
+    highlighting::{Color as SyntectColor, ScopeSelectors, StyleModifier, Theme, ThemeItem},
     parsing::{SyntaxDefinition, SyntaxReference, SyntaxSet, SyntaxSetBuilder},
     util::{as_24_bit_terminal_escaped, LinesWithEndings},
 };
@@ -202,23 +202,23 @@ pub fn to_highlighted_lines(json_str: &str, theme: &ColorTheme) -> Vec<Line<'sta
 fn replace_span_color(span: &mut Span<'_>, theme: &ColorTheme) {
     if let Some(fg) = span.style.fg {
         match fg {
-            ratatui::style::Color::Rgb(255, 255, 255) => {
+            RatatuiColor::Rgb(255, 255, 255) => {
                 // source.json
                 span.style.fg = Some(theme.fg);
             }
-            ratatui::style::Color::Rgb(255, 0, 0) => {
+            RatatuiColor::Rgb(255, 0, 0) => {
                 // constant.numeric.json
                 span.style.fg = Some(theme.cell_number_fg);
             }
-            ratatui::style::Color::Rgb(0, 255, 0) => {
+            RatatuiColor::Rgb(0, 255, 0) => {
                 // string.value.json
                 span.style.fg = Some(theme.cell_string_fg);
             }
-            ratatui::style::Color::Rgb(0, 0, 255) => {
+            RatatuiColor::Rgb(0, 0, 255) => {
                 // constant.language.boolean.json
                 span.style.fg = Some(theme.cell_bool_fg);
             }
-            ratatui::style::Color::Rgb(255, 255, 0) => {
+            RatatuiColor::Rgb(255, 255, 0) => {
                 // constant.language.null.json
                 span.style.fg = Some(theme.cell_null_fg);
             }
@@ -262,8 +262,8 @@ fn theme_item(scope: &str, r: u8, g: u8, b: u8) -> ThemeItem {
     }
 }
 
-fn syntect_color(r: u8, g: u8, b: u8) -> Color {
-    Color { r, g, b, a: 255 }
+fn syntect_color(r: u8, g: u8, b: u8) -> SyntectColor {
+    SyntectColor { r, g, b, a: 255 }
 }
 
 const CUSTOM_JSON_SYNTAX_DEFINITON: &str = r###"
