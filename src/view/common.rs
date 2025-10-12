@@ -8,9 +8,7 @@ use ratatui::{
 };
 use syntect::{
     easy::HighlightLines,
-    highlighting::{
-        Color, ScopeSelectors, StyleModifier, Theme, ThemeItem, ThemeSet, ThemeSettings,
-    },
+    highlighting::{Color, ScopeSelectors, StyleModifier, Theme, ThemeItem},
     parsing::{SyntaxDefinition, SyntaxReference, SyntaxSet, SyntaxSetBuilder},
     util::{as_24_bit_terminal_escaped, LinesWithEndings},
 };
@@ -182,7 +180,7 @@ pub fn cut_spans_by_width<'a>(
     ret
 }
 
-pub fn to_highlighted_lines(json_str: &str) -> Vec<Line<'static>> {
+pub fn to_highlighted_lines(json_str: &str, theme: &ColorTheme) -> Vec<Line<'static>> {
     let mut h = HighlightLines::new(&JSON_SYNTAX, &THEME);
     let s = LinesWithEndings::from(json_str)
         .map(|line| {
@@ -192,7 +190,41 @@ pub fn to_highlighted_lines(json_str: &str) -> Vec<Line<'static>> {
         })
         .collect::<Vec<String>>()
         .join("");
-    s.into_text().unwrap().into_iter().collect()
+    let mut lines: Vec<Line<'static>> = s.into_text().unwrap().into_iter().collect();
+    lines.iter_mut().for_each(|line| {
+        line.spans.iter_mut().for_each(|span| {
+            replace_span_color(span, theme);
+        });
+    });
+    lines
+}
+
+fn replace_span_color(span: &mut Span<'_>, theme: &ColorTheme) {
+    if let Some(fg) = span.style.fg {
+        match fg {
+            ratatui::style::Color::Rgb(255, 255, 255) => {
+                // source.json
+                span.style.fg = Some(theme.fg);
+            }
+            ratatui::style::Color::Rgb(255, 0, 0) => {
+                // constant.numeric.json
+                span.style.fg = Some(theme.cell_number_fg);
+            }
+            ratatui::style::Color::Rgb(0, 255, 0) => {
+                // string.value.json
+                span.style.fg = Some(theme.cell_string_fg);
+            }
+            ratatui::style::Color::Rgb(0, 0, 255) => {
+                // constant.language.boolean.json
+                span.style.fg = Some(theme.cell_bool_fg);
+            }
+            ratatui::style::Color::Rgb(255, 255, 0) => {
+                // constant.language.null.json
+                span.style.fg = Some(theme.cell_null_fg);
+            }
+            _ => {}
+        }
+    }
 }
 
 static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(|| {
@@ -208,26 +240,16 @@ static JSON_SYNTAX: Lazy<&SyntaxReference> =
 static THEME: Lazy<Theme> = Lazy::new(custom_json_theme);
 
 fn custom_json_theme() -> Theme {
-    let mut theme = Theme {
-        settings: ThemeSettings {
-            foreground: Some(syntect_color(255, 255, 255)),
-            ..ThemeSettings::default()
-        },
+    Theme {
+        scopes: vec![
+            theme_item("source.json", 255, 255, 255),
+            theme_item("constant.numeric.json", 255, 0, 0),
+            theme_item("string.value.json", 0, 255, 0),
+            theme_item("constant.language.boolean.json", 0, 0, 255),
+            theme_item("constant.language.null.json", 255, 255, 0),
+        ],
         ..Theme::default()
-    };
-    theme
-        .scopes
-        .push(theme_item("constant.numeric.json", 0, 255, 0));
-    theme
-        .scopes
-        .push(theme_item("string.value.json", 255, 0, 255));
-    theme
-        .scopes
-        .push(theme_item("constant.language.boolean.json", 0, 0, 255));
-    theme
-        .scopes
-        .push(theme_item("constant.language.null.json", 0, 255, 255));
-    theme
+    }
 }
 
 fn theme_item(scope: &str, r: u8, g: u8, b: u8) -> ThemeItem {

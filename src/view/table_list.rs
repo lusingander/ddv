@@ -378,7 +378,7 @@ impl TableListView {
         if let Some(desc) = self.current_selected_table_description() {
             let lines = match self.preview_type {
                 PreviewType::KeyValue => get_key_value_lines(desc),
-                PreviewType::Json => get_json_lines(desc),
+                PreviewType::Json => get_json_lines(desc, &self.theme),
             };
             let options = self.scroll_lines_state.current_options();
 
@@ -544,9 +544,9 @@ fn get_key_value_lines(desc: &TableDescription) -> Vec<Line<'static>> {
     lines
 }
 
-fn get_json_lines(desc: &TableDescription) -> Vec<Line<'static>> {
+fn get_json_lines(desc: &TableDescription, theme: &ColorTheme) -> Vec<Line<'static>> {
     let json_str = serde_json::to_string_pretty(&desc).unwrap();
-    to_highlighted_lines(&json_str)
+    to_highlighted_lines(&json_str, theme)
 }
 
 fn format_size(size_byte: u64) -> String {

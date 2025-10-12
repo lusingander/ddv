@@ -376,7 +376,7 @@ impl TableView {
             let schema = &self.table_description.key_schema_type;
             let key = &list_attribute_keys(&self.items, schema)[col];
             if let Some(attr) = selected_item.attributes.get(key) {
-                let lines = get_raw_json_attribute_lines(attr);
+                let lines = get_raw_json_attribute_lines(attr, &self.theme);
                 let options = self.attr_scroll_lines_state.current_options();
                 self.attr_scroll_lines_state = ScrollLinesState::new(lines, options);
                 self.attr_expanded = true;
@@ -522,7 +522,7 @@ fn get_raw_json_attribute_string(attr: &Attribute) -> String {
     serde_json::to_string_pretty(&wrapper).unwrap()
 }
 
-fn get_raw_json_attribute_lines(attr: &Attribute) -> Vec<Line<'static>> {
+fn get_raw_json_attribute_lines(attr: &Attribute, theme: &ColorTheme) -> Vec<Line<'static>> {
     let json_str = get_raw_json_attribute_string(attr);
-    to_highlighted_lines(&json_str)
+    to_highlighted_lines(&json_str, theme)
 }
