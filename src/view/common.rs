@@ -240,6 +240,7 @@ static JSON_SYNTAX: Lazy<&SyntaxReference> =
 static THEME: Lazy<Theme> = Lazy::new(custom_json_theme);
 
 fn custom_json_theme() -> Theme {
+    // Highlighting is done using temporary color definitions that are later converted to ANSI colors.
     Theme {
         scopes: vec![
             theme_item("source.json", 255, 255, 255),
