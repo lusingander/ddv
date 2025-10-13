@@ -1,4 +1,3 @@
-mod common;
 mod dialog;
 mod divider;
 mod loading_dialog;
