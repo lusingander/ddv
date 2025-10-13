@@ -39,6 +39,7 @@ syntect = { version = "5.3.0", default-features = false, features = [
 textwrap = "0.16.2"
 tokio = { version = "1.47.1", features = ["full"] }
 toml = "0.9.8"
+tui-input = "0.14.0"
 umbra = "0.4.0"
 
 [profile.release]
