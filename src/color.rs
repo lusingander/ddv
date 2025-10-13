@@ -7,6 +7,9 @@ pub struct ColorTheme {
     pub selected_fg: Color,
     pub selected_bg: Color,
     pub selected_axis_bg: Color,
+    pub quick_filter_matched_fg: Color,
+    pub quick_filter_matched_bg: Color,
+
     pub disabled: Color,
     pub short_help: Color,
     pub notification_success: Color,
@@ -41,6 +44,9 @@ impl Default for ColorTheme {
             selected_fg: Color::Black,
             selected_bg: Color::LightGreen,
             selected_axis_bg: Color::DarkGray,
+            quick_filter_matched_fg: Color::Black,
+            quick_filter_matched_bg: Color::Yellow,
+
             disabled: Color::DarkGray,
             short_help: Color::DarkGray,
             notification_success: Color::Green,
