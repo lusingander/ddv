@@ -9,6 +9,7 @@ use ratatui::{
     widgets::{Block, ListItem},
     Frame,
 };
+use tui_input::{backend::crossterm::EventHandler, Input};
 
 use crate::{
     color::ColorTheme,
@@ -16,7 +17,7 @@ use crate::{
     constant::APP_NAME,
     data::{Table, TableDescription},
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
-    handle_user_events,
+    handle_user_events, handle_user_events_with_default,
     help::{
         build_help_spans, build_short_help_spans, BuildHelpsItem, BuildShortHelpsItem, Spans,
         SpansWithPriority,
@@ -39,9 +40,18 @@ pub struct TableListView {
 
     list_state: ScrollListState,
     scroll_lines_state: ScrollLinesState,
+    filter_state: FilterState,
+    filter_input: Input,
+    view_indices: Vec<usize>,
 
     focused: Focused,
     preview_type: PreviewType,
+}
+
+enum FilterState {
+    None,
+    Filtering,
+    Filtered,
 }
 
 #[zero_indexed_enum]
@@ -65,6 +75,8 @@ impl TableListView {
         tx: Sender,
     ) -> Self {
         let list_state = ScrollListState::new(tables.len());
+
+        let view_indices = (0..tables.len()).collect();
         let scroll_lines_state =
             ScrollLinesState::new(vec![], ScrollLinesOptions::new(false, false));
         let (list_helps, detail_helps) = build_helps(mapper, theme);
@@ -80,6 +92,9 @@ impl TableListView {
             config,
             theme,
             tx,
+            filter_state: FilterState::None,
+            filter_input: Input::default(),
+            view_indices,
             list_state,
             scroll_lines_state,
             focused: Focused::List,
@@ -92,7 +107,24 @@ impl TableListView {
 }
 
 impl TableListView {
-    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
+    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, key_event: KeyEvent) {
+        if let FilterState::Filtering = self.filter_state {
+            handle_user_events_with_default! { user_events =>
+                UserEvent::Confirm => {
+                    self.apply_filter();
+                }
+                UserEvent::Reset => {
+                    self.reset_filter();
+                }
+                => {
+                    self.update_filter(key_event);
+                    self.load_table_description();
+                    self.update_preview();
+                }
+            }
+            return;
+        }
+
         match self.focused {
             Focused::List => {
                 handle_user_events! { user_events =>
@@ -125,6 +157,12 @@ impl TableListView {
                         self.list_state.select_first();
                         self.load_table_description();
                         self.update_preview();
+                    }
+                    UserEvent::QuickFilter => {
+                        self.start_filtering();
+                    }
+                    UserEvent::Reset => {
+                        self.reset_filter();
                     }
                     UserEvent::NextPane => {
                         self.next_pane();
@@ -293,7 +331,7 @@ impl TableListView {
         let show_items_count = area.height as usize - 2 /* border */;
         let item_width = area.width as usize - 2 /* border */ - 2 /* padding (list) */ - 2 /* padding (item) */;
         let items: Vec<_> = self
-            .tables
+            .filtered_tables()
             .iter()
             .skip(self.list_state.offset)
             .take(show_items_count)
@@ -333,11 +371,12 @@ impl TableListView {
 
 impl TableListView {
     fn load_table_description(&self) {
-        let name = self.current_selected_table_name();
-        if self.table_descriptions.contains_key(name) {
-            return;
+        if let Some(name) = self.current_selected_table_name() {
+            if self.table_descriptions.contains_key(name) {
+                return;
+            }
+            self.tx.send(AppEvent::LoadTableDescription(name.into()));
         }
-        self.tx.send(AppEvent::LoadTableDescription(name.into()));
     }
 
     pub fn set_table_description(&mut self, desc: TableDescription) {
@@ -353,13 +392,15 @@ impl TableListView {
         }
     }
 
-    fn current_selected_table_name(&self) -> &str {
-        &self.tables.get(self.list_state.selected).unwrap().name
+    fn current_selected_table_name(&self) -> Option<&str> {
+        self.filtered_tables()
+            .get(self.list_state.selected)
+            .map(|t| t.name.as_str())
     }
 
     fn current_selected_table_description(&self) -> Option<&TableDescription> {
-        let name = self.current_selected_table_name();
-        self.table_descriptions.get(name)
+        self.current_selected_table_name()
+            .and_then(|name| self.table_descriptions.get(name))
     }
 
     fn next_pane(&mut self) {
@@ -375,21 +416,88 @@ impl TableListView {
     }
 
     fn update_preview(&mut self) {
+        let options = self.scroll_lines_state.current_options();
+
         if let Some(desc) = self.current_selected_table_description() {
             let lines = match self.preview_type {
                 PreviewType::KeyValue => get_key_value_lines(desc),
                 PreviewType::Json => get_json_lines(desc, &self.theme),
             };
-            let options = self.scroll_lines_state.current_options();
-
             self.scroll_lines_state = ScrollLinesState::new(lines, options);
+        } else {
+            self.scroll_lines_state = ScrollLinesState::new(vec![], options);
         }
     }
 
-    fn copy_table_name_to_clipboard(&self) {
-        let name = self.current_selected_table_name();
+    fn start_filtering(&mut self) {
+        match self.filter_state {
+            FilterState::None | FilterState::Filtered => {
+                self.filter_input.reset();
+                self.filter_state = FilterState::Filtering;
+                self.update_status_input();
+            }
+            FilterState::Filtering => {}
+        }
+    }
+
+    fn update_filter(&mut self, key_event: KeyEvent) {
+        let event = &ratatui::crossterm::event::Event::Key(key_event);
+        self.filter_input.handle_event(event);
+        self.filter_view_indices();
+        self.update_status_input();
+    }
+
+    fn update_status_input(&mut self) {
+        let query = format!("/{}", self.filter_input.value());
+        let cursor_pos = self.filter_input.cursor() as u16 + 1; // "/"
         self.tx
-            .send(AppEvent::CopyToClipboard("table name".into(), name.into()));
+            .send(AppEvent::UpdateStatusInput(query, Some(cursor_pos)));
+    }
+
+    fn apply_filter(&mut self) {
+        if self.filter_input.value().is_empty() {
+            self.filter_state = FilterState::None;
+        } else {
+            self.filter_state = FilterState::Filtered;
+        }
+        self.filter_view_indices();
+        self.tx.send(AppEvent::ClearStatus);
+    }
+
+    fn reset_filter(&mut self) {
+        match self.filter_state {
+            FilterState::Filtering | FilterState::Filtered => {
+                self.filter_input.reset();
+                self.filter_state = FilterState::None;
+                self.filter_view_indices();
+                self.tx.send(AppEvent::ClearStatus);
+            }
+            FilterState::None => {}
+        }
+    }
+
+    fn filter_view_indices(&mut self) {
+        let query = self.filter_input.value().to_lowercase();
+        self.view_indices = self
+            .tables
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| t.name.to_lowercase().contains(&query))
+            .map(|(i, _)| i)
+            .collect();
+        // reset list state
+        self.list_state = ScrollListState::new(self.view_indices.len());
+    }
+
+    fn filtered_tables(&self) -> Vec<&Table> {
+        self.view_indices.iter().map(|&i| &self.tables[i]).collect()
+    }
+
+    fn copy_table_name_to_clipboard(&self) {
+        if let Some(name) = self.current_selected_table_name() {
+            self.tx
+                .send(AppEvent::CopyToClipboard("table name".into(), name.into()));
+        }
     }
 
     fn copy_table_descriptions_to_clipboard(&self) {
