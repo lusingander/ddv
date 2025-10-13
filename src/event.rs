@@ -22,6 +22,8 @@ pub enum AppEvent {
     OpenHelp(Vec<Spans>),
     BackToBeforeView,
     CopyToClipboard(String, String),
+    ClearStatus,
+    UpdateStatusInput(String, Option<u16>),
     NotifySuccess(String),
     NotifyWarning(AppError),
     NotifyError(AppError),

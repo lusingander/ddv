@@ -28,6 +28,7 @@ enum Status {
     NotificationSuccess(String),
     NotificationWarning(String),
     NotificationError(String),
+    Input(String, Option<u16>),
 }
 
 pub struct App {
@@ -89,7 +90,7 @@ impl App {
                     }
 
                     match self.status {
-                        Status::None => {
+                        Status::None | Status::Input(_, _) => {
                             // do nothing
                         }
                         Status::NotificationSuccess(_) | Status::NotificationWarning(_) => {
@@ -146,6 +147,12 @@ impl App {
                 AppEvent::CopyToClipboard(name, content) => {
                     self.copy_to_clipboard(name, content);
                 }
+                AppEvent::ClearStatus => {
+                    self.clear_status();
+                }
+                AppEvent::UpdateStatusInput(msg, cursor_pos) => {
+                    self.update_status_input(msg, cursor_pos);
+                }
                 AppEvent::NotifySuccess(msg) => {
                     self.notify_success(msg);
                 }
@@ -192,6 +199,7 @@ impl App {
                     .add_modifier(Modifier::BOLD)
                     .fg(self.theme.notification_error),
             ),
+            Status::Input(msg, _) => Line::from(msg.as_str().fg(self.theme.fg)),
         };
         let paragraph = Paragraph::new(text).block(
             Block::default()
@@ -199,6 +207,11 @@ impl App {
                 .padding(Padding::horizontal(1)),
         );
         f.render_widget(paragraph, area);
+
+        if let Status::Input(_, Some(cursor_pos)) = &self.status {
+            let (x, y) = (area.x + cursor_pos + 1, area.y + 1);
+            f.set_cursor_position((x, y));
+        }
     }
 
     fn render_loading_dialog(&self, f: &mut Frame) {
@@ -324,10 +337,6 @@ impl App {
         self.view_stack.pop();
     }
 
-    fn clear_status(&mut self) {
-        self.status = Status::None;
-    }
-
     fn copy_to_clipboard(&self, name: String, content: String) {
         match crate::util::copy_to_clipboard(&content) {
             Ok(_) => {
@@ -338,6 +347,14 @@ impl App {
                 self.tx.send(AppEvent::NotifyError(e));
             }
         }
+    }
+
+    fn clear_status(&mut self) {
+        self.status = Status::None;
+    }
+
+    fn update_status_input(&mut self, msg: String, cursor_pos: Option<u16>) {
+        self.status = Status::Input(msg, cursor_pos);
     }
 
     fn notify_success(&mut self, msg: String) {
