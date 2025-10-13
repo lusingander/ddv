@@ -499,6 +499,7 @@ impl TableListView {
             FilterState::None | FilterState::Filtered => {
                 self.filter_input.reset();
                 self.filter_state = FilterState::Filtering;
+                self.filter_view_indices();
                 self.update_status_input();
             }
             FilterState::Filtering => {}
