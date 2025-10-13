@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use itsuki::zero_indexed_enum;
+use laurier::highlight::highlight_matched_text;
 use ratatui::{
     crossterm::event::KeyEvent,
     layout::{Constraint, Layout, Rect},
@@ -330,6 +331,7 @@ impl TableListView {
     fn render_list(&mut self, f: &mut Frame, area: Rect) {
         let show_items_count = area.height as usize - 2 /* border */;
         let item_width = area.width as usize - 2 /* border */ - 2 /* padding (list) */ - 2 /* padding (item) */;
+        let query = self.filter_input.value().to_lowercase();
         let items: Vec<_> = self
             .filtered_tables()
             .iter()
@@ -337,8 +339,24 @@ impl TableListView {
             .take(show_items_count)
             .enumerate()
             .map(|(i, t)| {
-                let name = console::truncate_str(&t.name, item_width, "..");
-                let line = Line::raw(format!(" {name:item_width$} "));
+                let line = if query.is_empty() {
+                    let name = console::truncate_str(&t.name, item_width, "..");
+                    Line::raw(format!(" {name:item_width$} "))
+                } else {
+                    let i = t.name.to_lowercase().find(&query).unwrap();
+                    let mut spans = highlight_matched_text(&t.name)
+                        .ellipsis("..")
+                        .matched_range(i, i + query.len())
+                        .matched_style(
+                            Style::default()
+                                .fg(self.theme.quick_filter_matched_fg)
+                                .bg(self.theme.quick_filter_matched_bg),
+                        )
+                        .into_spans();
+                    spans.insert(0, " ".into());
+                    spans.push(" ".into());
+                    Line::from(spans)
+                };
                 let mut style = Style::default();
                 if i + self.list_state.offset == self.list_state.selected {
                     style = style.fg(self.theme.selected_fg);
