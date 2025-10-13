@@ -32,8 +32,10 @@ pub struct TableListView {
     table_descriptions: HashMap<String, TableDescription>,
 
     list_helps: Vec<Spans>,
+    list_filtered_helps: Vec<Spans>,
     detail_helps: Vec<Spans>,
     list_short_helps: Vec<SpansWithPriority>,
+    list_filtered_short_helps: Vec<SpansWithPriority>,
     detail_short_helps: Vec<SpansWithPriority>,
     config: UiTableListConfig,
     theme: ColorTheme,
@@ -80,15 +82,18 @@ impl TableListView {
         let view_indices = (0..tables.len()).collect();
         let scroll_lines_state =
             ScrollLinesState::new(vec![], ScrollLinesOptions::new(false, false));
-        let (list_helps, detail_helps) = build_helps(mapper, theme);
-        let (list_short_helps, detail_short_helps) = build_short_helps(mapper);
+        let (list_helps, list_filtered_helps, detail_helps) = build_helps(mapper, theme);
+        let (list_short_helps, list_filtered_short_helps, detail_short_helps) =
+            build_short_helps(mapper);
 
         let mut view = TableListView {
             tables,
             table_descriptions: HashMap::new(),
             list_helps,
+            list_filtered_helps,
             detail_helps,
             list_short_helps,
+            list_filtered_short_helps,
             detail_short_helps,
             config,
             theme,
@@ -254,13 +259,19 @@ impl TableListView {
 
     pub fn short_helps(&self) -> &[SpansWithPriority] {
         match self.focused {
-            Focused::List => &self.list_short_helps,
+            Focused::List => match self.filter_state {
+                FilterState::None => &self.list_short_helps,
+                FilterState::Filtering | FilterState::Filtered => &self.list_filtered_short_helps,
+            },
             Focused::Detail => &self.detail_short_helps,
         }
     }
 }
 
-fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<Spans>) {
+fn build_helps(
+    mapper: &UserEventMapper,
+    theme: ColorTheme,
+) -> (Vec<Spans>, Vec<Spans>, Vec<Spans>) {
     #[rustfmt::skip]
     let list_helps = vec![
         BuildHelpsItem::new(UserEvent::Quit, "Quit app"),
@@ -269,6 +280,21 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<
         BuildHelpsItem::new(UserEvent::GoToTop, "Select first item"),
         BuildHelpsItem::new(UserEvent::GoToBottom, "Select last item"),
         BuildHelpsItem::new(UserEvent::Confirm, "Open table"),
+        BuildHelpsItem::new(UserEvent::QuickFilter, "Filter tables"),
+        BuildHelpsItem::new(UserEvent::NextPane, "Switch to next pane"),
+        BuildHelpsItem::new(UserEvent::NextPreview, "Switch to next preview"),
+        BuildHelpsItem::new(UserEvent::PrevPreview, "Switch to prev preview"),
+        BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy table name"),
+    ];
+    #[rustfmt::skip]
+    let list_filtered_helps = vec![
+        BuildHelpsItem::new(UserEvent::Quit, "Quit app"),
+        BuildHelpsItem::new(UserEvent::Down, "Select next item"),
+        BuildHelpsItem::new(UserEvent::Up, "Select prev item"),
+        BuildHelpsItem::new(UserEvent::GoToTop, "Select first item"),
+        BuildHelpsItem::new(UserEvent::GoToBottom, "Select last item"),
+        BuildHelpsItem::new(UserEvent::Confirm, "Open table"),
+        BuildHelpsItem::new(UserEvent::Reset, "Clear filter"),
         BuildHelpsItem::new(UserEvent::NextPane, "Switch to next pane"),
         BuildHelpsItem::new(UserEvent::NextPreview, "Switch to next preview"),
         BuildHelpsItem::new(UserEvent::PrevPreview, "Switch to prev preview"),
@@ -294,20 +320,40 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<
     ];
     (
         build_help_spans(list_helps, mapper, theme),
+        build_help_spans(list_filtered_helps, mapper, theme),
         build_help_spans(detail_helps, mapper, theme),
     )
 }
 
-fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<SpansWithPriority>) {
+fn build_short_helps(
+    mapper: &UserEventMapper,
+) -> (
+    Vec<SpansWithPriority>,
+    Vec<SpansWithPriority>,
+    Vec<SpansWithPriority>,
+) {
     #[rustfmt::skip]
     let list_helps = vec![
         BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
         BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select", 2),
-        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 6),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 7),
         BuildShortHelpsItem::single(UserEvent::Confirm, "Open", 1),
-        BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 3),
-        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 5),
-        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 4),
+        BuildShortHelpsItem::single(UserEvent::QuickFilter, "Filter", 3),
+        BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 4),
+        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 6),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 5),
+        BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
+    ];
+    #[rustfmt::skip]
+    let list_filtered_helps = vec![
+        BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
+        BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select", 2),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 7),
+        BuildShortHelpsItem::single(UserEvent::Confirm, "Open", 1),
+        BuildShortHelpsItem::single(UserEvent::Reset, "Clear filter", 3),
+        BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 4),
+        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 6),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 5),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     #[rustfmt::skip]
@@ -323,6 +369,7 @@ fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<S
     ];
     (
         build_short_help_spans(list_helps, mapper),
+        build_short_help_spans(list_filtered_helps, mapper),
         build_short_help_spans(detail_helps, mapper),
     )
 }
@@ -528,7 +575,15 @@ impl TableListView {
 
     fn open_help(&self) {
         match self.focused {
-            Focused::List => self.tx.send(AppEvent::OpenHelp(self.list_helps.clone())),
+            Focused::List => match self.filter_state {
+                FilterState::None => {
+                    self.tx.send(AppEvent::OpenHelp(self.list_helps.clone()));
+                }
+                FilterState::Filtering | FilterState::Filtered => {
+                    self.tx
+                        .send(AppEvent::OpenHelp(self.list_filtered_helps.clone()));
+                }
+            },
             Focused::Detail => self.tx.send(AppEvent::OpenHelp(self.detail_helps.clone())),
         }
     }
