@@ -127,6 +127,9 @@ impl TableView {
                     UserEvent::CopyToClipboard => {
                         self.copy_to_clipboard();
                     }
+                    UserEvent::Delete => {
+                        self.delete_selected_item();
+                    }
                     UserEvent::Help => {
                         self.open_help();
                     }
@@ -199,6 +202,9 @@ impl TableView {
                 UserEvent::CopyToClipboard => {
                     self.copy_to_clipboard();
                 }
+                UserEvent::Delete => {
+                    self.delete_selected_item();
+                }
                 UserEvent::Help => {
                     self.open_help();
                 }
@@ -256,6 +262,7 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<
         BuildHelpsItem::new(UserEvent::Narrow, "Narrow selected column"),
         BuildHelpsItem::new(UserEvent::Reload, "Reload table data"),
         BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy selected item"),
+        BuildHelpsItem::new(UserEvent::Delete, "Delete selected item"),
     ];
     #[rustfmt::skip]
     let attr_helps = vec![
@@ -273,6 +280,7 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<
         BuildHelpsItem::new(UserEvent::ToggleNumber, "Toggle number"),
         BuildHelpsItem::new(UserEvent::Reload, "Reload table data"),
         BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy selected item"),
+        BuildHelpsItem::new(UserEvent::Delete, "Delete selected item"),
     ];
     (
         build_help_spans(table_helps, mapper, theme),
@@ -294,6 +302,7 @@ fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<S
         BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 7),
         BuildShortHelpsItem::group(vec![UserEvent::Widen, UserEvent::Narrow], "Widen/Narrow", 9),
         BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 8),
+        BuildShortHelpsItem::single(UserEvent::Delete, "Delete", 11),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     #[rustfmt::skip]
@@ -305,6 +314,7 @@ fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<S
         BuildShortHelpsItem::group(vec![UserEvent::ToggleWrap, UserEvent::ToggleNumber], "Toggle wrap/number", 5),
         BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 3),
         BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 4),
+        BuildShortHelpsItem::single(UserEvent::Delete, "Delete", 7),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     (
@@ -440,6 +450,15 @@ impl TableView {
             self.tx.send(AppEvent::OpenHelp(self.attr_helps.clone()))
         } else {
             self.tx.send(AppEvent::OpenHelp(self.table_helps.clone()))
+        }
+    }
+
+    fn delete_selected_item(&mut self) {
+        if let Some(item) = self.items.get(self.table_state.selected_row) {
+            let desc = self.table_description.clone();
+            let item = item.clone();
+            self.attr_expanded = false;
+            self.tx.send(AppEvent::DeleteItem(desc, item));
         }
     }
 }
