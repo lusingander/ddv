@@ -34,7 +34,7 @@ We welcome pull requests, but please note that they are not guaranteed to be acc
 
 ### Continuous Integration
 
-We use [GitHub Actions](https://github.com/lusingander/stu/blob/master/.github/workflows/build.yml) to perform basic checks:
+We use [GitHub Actions](https://github.com/lusingander/ddv/blob/master/.github/workflows/build.yml) to perform basic checks:
 
 - Run both stable and MSRV versions of Rust.
 - Run build, test, format, and lint.
@@ -45,4 +45,4 @@ This project is licensed under the [MIT License](LICENSE). By contributing, cont
 
 ## Additional Information
 
-If you have any questions or concerns, please use the [Discussions](https://github.com/lusingander/stu/discussions).
+If you have any questions or concerns, please use the [Discussions](https://github.com/lusingander/ddv/discussions).
