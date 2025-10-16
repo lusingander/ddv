@@ -1,5 +1,5 @@
 use ratatui::{
-    crossterm::event::KeyEvent,
+    crossterm::event::{KeyCode, KeyEvent},
     layout::{Margin, Rect},
     style::Stylize,
     symbols::border,
@@ -13,8 +13,8 @@ use crate::{
     config::UiTableConfig,
     constant::APP_NAME,
     data::{
-        list_attribute_keys, Attribute, Item, KeySchemaType, RawAttributeJsonWrapper, RawJsonItem,
-        TableDescription, TableInsight,
+        list_attribute_keys, to_key_string, Attribute, Item, KeySchemaType,
+        RawAttributeJsonWrapper, RawJsonItem, TableDescription, TableInsight,
     },
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
     handle_user_events,
@@ -45,6 +45,11 @@ pub struct TableView {
     table_state: TableState,
     attr_expanded: bool,
     attr_scroll_lines_state: ScrollLinesState,
+    pending_delete: Option<PendingDelete>,
+}
+
+struct PendingDelete {
+    row_index: usize,
 }
 
 impl TableView {
@@ -80,12 +85,18 @@ impl TableView {
             table_state,
             attr_expanded: false,
             attr_scroll_lines_state,
+            pending_delete: None,
         }
     }
 }
 
 impl TableView {
-    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
+    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, key_event: KeyEvent) {
+        if self.pending_delete.is_some() && self.handle_delete_confirmation(&user_events, key_event)
+        {
+            return;
+        }
+
         if self.attr_expanded {
             handle_user_events! { user_events =>
                     UserEvent::Close | UserEvent::Expand => {
@@ -128,7 +139,7 @@ impl TableView {
                         self.copy_to_clipboard();
                     }
                     UserEvent::Delete => {
-                        self.delete_selected_item();
+                        self.start_delete_confirmation();
                     }
                     UserEvent::Help => {
                         self.open_help();
@@ -203,7 +214,7 @@ impl TableView {
                     self.copy_to_clipboard();
                 }
                 UserEvent::Delete => {
-                    self.delete_selected_item();
+                    self.start_delete_confirmation();
                 }
                 UserEvent::Help => {
                     self.open_help();
@@ -453,12 +464,71 @@ impl TableView {
         }
     }
 
-    fn delete_selected_item(&mut self) {
+    fn start_delete_confirmation(&mut self) {
+        if self.pending_delete.is_some() {
+            return;
+        }
         if let Some(item) = self.items.get(self.table_state.selected_row) {
+            let schema = &self.table_description.key_schema_type;
+            let key_string = to_key_string(item, schema);
+            let row_index = self.table_state.selected_row;
+            self.pending_delete = Some(PendingDelete { row_index });
+            let message = format!("Delete item {key_string}? (y/n)");
+            self.tx.send(AppEvent::UpdateStatusInput(message, None));
+        }
+    }
+
+    fn confirm_delete(&mut self) {
+        if let Some(pending) = self.pending_delete.take() {
+            self.tx.send(AppEvent::ClearStatus);
+            self.execute_delete(pending.row_index);
+        }
+    }
+
+    fn cancel_delete(&mut self) {
+        if self.pending_delete.take().is_some() {
+            self.tx.send(AppEvent::ClearStatus);
+        }
+    }
+
+    fn execute_delete(&mut self, row_index: usize) {
+        if let Some(item) = self.items.get(row_index) {
             let desc = self.table_description.clone();
             let item = item.clone();
             self.attr_expanded = false;
             self.tx.send(AppEvent::DeleteItem(desc, item));
+        }
+    }
+
+    fn handle_delete_confirmation(
+        &mut self,
+        user_events: &[UserEvent],
+        key_event: KeyEvent,
+    ) -> bool {
+        if self.pending_delete.is_none() {
+            return false;
+        }
+
+        if user_events.iter().any(|e| *e == UserEvent::Confirm) {
+            self.confirm_delete();
+            return true;
+        }
+
+        if user_events.iter().any(|e| *e == UserEvent::Close) {
+            self.cancel_delete();
+            return true;
+        }
+
+        match key_event.code {
+            KeyCode::Char('y') | KeyCode::Char('Y') => {
+                self.confirm_delete();
+                true
+            }
+            KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                self.cancel_delete();
+                true
+            }
+            _ => true,
         }
     }
 }
