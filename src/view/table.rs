@@ -509,10 +509,10 @@ impl TableView {
             return false;
         }
 
-        if user_events.iter().any(|e| *e == UserEvent::Confirm) {
-            self.confirm_delete();
-            return true;
-        }
+        // if user_events.iter().any(|e| *e == UserEvent::Confirm) {
+        //     self.confirm_delete();
+        //     return true;
+        // }
 
         if user_events.iter().any(|e| *e == UserEvent::Close) {
             self.cancel_delete();
