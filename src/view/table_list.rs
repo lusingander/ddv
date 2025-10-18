@@ -524,6 +524,10 @@ impl TableListView {
         } else {
             self.filter_state = FilterState::Filtered;
         }
+        if self.view_indices.is_empty() {
+            self.reset_filter();
+            return;
+        }
         self.filter_view_indices();
         self.tx.send(AppEvent::ClearStatus);
     }
