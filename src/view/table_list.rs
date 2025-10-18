@@ -15,7 +15,6 @@ use tui_input::{backend::crossterm::EventHandler, Input};
 use crate::{
     color::ColorTheme,
     config::UiTableListConfig,
-    constant::APP_NAME,
     data::{Table, TableDescription},
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
     handle_user_events, handle_user_events_with_default,
@@ -417,7 +416,6 @@ impl TableListView {
             })
             .collect();
         let list = ScrollList::new(items)
-            .title(format!(" {APP_NAME} "))
             .theme(&self.theme)
             .focused(self.focused == Focused::List);
         f.render_stateful_widget(list, area, &mut self.list_state);

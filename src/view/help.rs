@@ -58,9 +58,7 @@ impl HelpView {
     }
 
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
-        let block = Block::bordered()
-            .title_top(Line::from(format!(" {APP_NAME} ")).left_aligned())
-            .padding(Padding::horizontal(1));
+        let block = Block::bordered().padding(Padding::horizontal(1));
 
         let content_area = block.inner(area);
 

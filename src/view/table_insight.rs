@@ -4,7 +4,6 @@ use ratatui::{
 
 use crate::{
     color::ColorTheme,
-    constant::APP_NAME,
     data::TableInsight,
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
     handle_user_events,
@@ -95,10 +94,7 @@ impl TableInsightView {
     }
 
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
-        let title = format!(
-            " {} - {} (Insights) ",
-            APP_NAME, self.table_insight.table_name
-        );
+        let title = format!(" {} (Insights) ", self.table_insight.table_name);
         let scroll = ScrollLines::default()
             .block(
                 Block::bordered()

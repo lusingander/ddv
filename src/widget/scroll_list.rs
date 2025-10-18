@@ -147,11 +147,6 @@ impl ScrollList<'_> {
         }
     }
 
-    pub fn title(mut self, title: impl Into<String>) -> Self {
-        self.title = Some(title.into());
-        self
-    }
-
     pub fn theme(mut self, theme: &ColorTheme) -> Self {
         self.color = ScrollListColor::new(theme);
         self

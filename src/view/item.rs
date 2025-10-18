@@ -7,7 +7,6 @@ use ratatui::{
 
 use crate::{
     color::ColorTheme,
-    constant::APP_NAME,
     data::{
         list_attribute_keys, to_key_string, Item, KeySchemaType, PlainJsonItem, RawJsonItem,
         TableDescription,
@@ -132,8 +131,8 @@ impl ItemView {
 
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
         let title = format!(
-            " {} - {} ({}) ",
-            APP_NAME, self.table_description.table_name, self.key_string
+            " {} ({}) ",
+            self.table_description.table_name, self.key_string
         );
         let scroll = ScrollLines::default()
             .block(

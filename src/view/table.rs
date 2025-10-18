@@ -11,7 +11,6 @@ use ratatui::{
 use crate::{
     color::ColorTheme,
     config::UiTableConfig,
-    constant::APP_NAME,
     data::{
         list_attribute_keys, Attribute, Item, KeySchemaType, RawAttributeJsonWrapper, RawJsonItem,
         TableDescription, TableInsight,
@@ -207,7 +206,7 @@ impl TableView {
     }
 
     pub fn render(&mut self, f: &mut Frame, area: Rect) {
-        let title = format!(" {} - {} ", APP_NAME, self.table_description.table_name);
+        let title = format!(" {} ", self.table_description.table_name);
         let count = self.table_state.selected_count_string();
         let block = Block::bordered()
             .title_top(Line::from(title).left_aligned())
