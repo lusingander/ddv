@@ -23,33 +23,40 @@ Show
 
 Sleep 1s
 Type "j"
-Sleep 1s
+Sleep 500ms
 Screenshot "./img/table-list-list.png"
 Tab
-Sleep 1s
+Sleep 500ms
 Screenshot "./img/table-list-detail-kv.png"
 Type "v"
 Sleep 1s
 Screenshot "./img/table-list-detail-json.png"
 Type@100ms "jjjjjjjjjjjjjjjjjjjjjjjjj"
-Sleep 1.5s
-Type "v"
 Sleep 1s
+Type "v"
+Sleep 500ms
 Tab
 Sleep 500ms
-Type "G"
+Type "/"
 Sleep 500ms
-Type "k"
+Type@200ms "sensor"
+Sleep 200ms
+Screenshot "./img/table-list-filtering.png"
+Enter
 Sleep 500ms
-Type "k"
-Sleep 1.5s
+Type "j"
+Sleep 1s
 Enter
 
 Sleep 3s
 Screenshot "./img/table.png"
 Type@200ms "jjjjj"
 Sleep 1s
-Type@200ms "lllllllllll"
+Type@200ms "lll"
+Sleep 500ms
+Type@200ms "++++"
+Sleep 500ms
+Type@200ms "llllllll"
 Sleep 1s
 Type@500ms "fff"
 Sleep 500ms
