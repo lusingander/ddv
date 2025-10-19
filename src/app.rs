@@ -14,7 +14,7 @@ use crate::{
     client::Client,
     color::ColorTheme,
     config::Config,
-    data::{Item, Table, TableDescription, TableInsight},
+    data::{to_key_string, Item, Table, TableDescription, TableInsight},
     error::{AppError, AppResult},
     event::{AppEvent, Receiver, Sender, UserEvent, UserEventMapper},
     handle_user_events,
@@ -146,6 +146,12 @@ impl App {
                 }
                 AppEvent::CopyToClipboard(name, content) => {
                     self.copy_to_clipboard(name, content);
+                }
+                AppEvent::DeleteItem(desc, item) => {
+                    self.delete_item(desc, item);
+                }
+                AppEvent::CompleteDeleteItem(desc, key_string, result) => {
+                    self.complete_delete_item(desc, key_string, result);
                 }
                 AppEvent::ClearStatus => {
                     self.clear_status();
@@ -344,6 +350,38 @@ impl App {
                 self.tx.send(AppEvent::NotifySuccess(msg));
             }
             Err(e) => {
+                self.tx.send(AppEvent::NotifyError(e));
+            }
+        }
+    }
+
+    fn delete_item(&mut self, desc: TableDescription, item: Item) {
+        self.loading = true;
+        let client = self.client.clone();
+        let tx = self.tx.clone();
+        let schema = desc.key_schema_type.clone();
+        let table_name = desc.table_name.clone();
+        let key_string = to_key_string(&item, &schema);
+        spawn(async move {
+            let result = client.delete_item(&table_name, &schema, &item).await;
+            tx.send(AppEvent::CompleteDeleteItem(desc, key_string, result));
+        });
+    }
+
+    fn complete_delete_item(
+        &mut self,
+        desc: TableDescription,
+        key_string: String,
+        result: AppResult<()>,
+    ) {
+        match result {
+            Ok(()) => {
+                let msg = format!("Deleted item {key_string}");
+                self.tx.send(AppEvent::NotifySuccess(msg));
+                self.load_table_items(desc);
+            }
+            Err(e) => {
+                self.loading = false;
                 self.tx.send(AppEvent::NotifyError(e));
             }
         }
