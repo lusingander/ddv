@@ -25,6 +25,15 @@ impl ScrollListState {
         }
     }
 
+    pub fn with_new_total(&self, total: usize) -> ScrollListState {
+        ScrollListState {
+            selected: 0,
+            offset: 0,
+            total,
+            height: self.height,
+        }
+    }
+
     pub fn select_next(&mut self) {
         if self.total == 0 {
             return;
@@ -108,6 +117,22 @@ impl ScrollListState {
         self.selected = self.total - 1;
         if self.height < self.total {
             self.offset = self.total - self.height;
+        }
+    }
+
+    pub fn select_index(&mut self, index: usize) {
+        if self.total == 0 || index >= self.total {
+            return;
+        }
+        self.selected = index;
+        if self.height < self.total {
+            if self.selected < self.offset {
+                self.offset = self.selected;
+            } else if self.selected >= self.offset + self.height {
+                self.offset = self.selected + 1 - self.height;
+            }
+        } else {
+            self.offset = 0;
         }
     }
 }
