@@ -536,7 +536,9 @@ impl TableListView {
             FilterState::Filtering | FilterState::Filtered => {
                 self.filter_input.reset();
                 self.filter_state = FilterState::None;
+                let orig_idx = self.view_indices[self.list_state.selected];
                 self.filter_view_indices();
+                self.list_state.select_index(orig_idx);
                 self.tx.send(AppEvent::ClearStatus);
             }
             FilterState::None => {}
@@ -553,7 +555,7 @@ impl TableListView {
             .map(|(i, _)| i)
             .collect();
         // reset list state
-        self.list_state = ScrollListState::new(self.view_indices.len());
+        self.list_state = self.list_state.with_new_total(self.view_indices.len());
     }
 
     fn filtered_tables(&self) -> Vec<&Table> {
