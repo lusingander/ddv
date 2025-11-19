@@ -22,6 +22,8 @@ pub enum AppEvent {
     OpenHelp(Vec<Spans>),
     BackToBeforeView,
     CopyToClipboard(String, String),
+    DeleteItem(TableDescription, Item),
+    CompleteDeleteItem(TableDescription, String, AppResult<()>),
     ClearStatus,
     UpdateStatusInput(String, Option<u16>),
     NotifySuccess(String),
@@ -104,6 +106,7 @@ pub enum UserEvent {
     Narrow,
     Reload,
     CopyToClipboard,
+    Delete,
     Help,
 }
 
@@ -146,6 +149,8 @@ impl UserEventMapper {
             (KeyEvent::new(KeyCode::Char('-'), KeyModifiers::NONE), UserEvent::Narrow),
             (KeyEvent::new(KeyCode::Char('R'), KeyModifiers::NONE), UserEvent::Reload),
             (KeyEvent::new(KeyCode::Char('c'), KeyModifiers::NONE), UserEvent::CopyToClipboard),
+            (KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE), UserEvent::Delete),
+            (KeyEvent::new(KeyCode::Delete, KeyModifiers::NONE), UserEvent::Delete),
             (KeyEvent::new(KeyCode::Char('?'), KeyModifiers::NONE), UserEvent::Help),
         ];
         UserEventMapper { map }
