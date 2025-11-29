@@ -6,7 +6,7 @@ use ratatui::{
     crossterm::event::KeyEvent,
     layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
-    text::Line,
+    text::{Line, Span},
     widgets::{Block, ListItem},
     Frame,
 };
@@ -390,8 +390,11 @@ impl TableListView {
                     Line::raw(format!(" {name:item_width$} "))
                 } else {
                     let i = t.name.to_lowercase().find(&query).unwrap();
-                    let mut spans = highlight_matched_text(&t.name)
-                        .ellipsis("..")
+                    let mut hm = highlight_matched_text(vec![Span::raw(&t.name)]);
+                    if t.name.len() > item_width {
+                        hm = hm.ellipsis("..");
+                    }
+                    let mut spans = hm
                         .matched_range(i, i + query.len())
                         .matched_style(
                             Style::default()
