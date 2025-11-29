@@ -539,7 +539,11 @@ impl TableListView {
             FilterState::Filtering | FilterState::Filtered => {
                 self.filter_input.reset();
                 self.filter_state = FilterState::None;
-                let orig_idx = self.view_indices[self.list_state.selected];
+                let orig_idx = self
+                    .view_indices
+                    .get(self.list_state.selected)
+                    .copied()
+                    .unwrap_or(0);
                 self.filter_view_indices();
                 self.list_state.select_index(orig_idx);
                 self.tx.send(AppEvent::ClearStatus);
