@@ -14,7 +14,7 @@ use aws_sdk_dynamodb::types::{
     ScalarAttributeType as AwsScalarAttributeType, TableDescription as AwsTableDescription,
     TableStatus as AwsTableStatus,
 };
-use aws_smithy_types::DateTime as AwsDateTime;
+use aws_smithy_types::{Blob, DateTime as AwsDateTime};
 use chrono::{DateTime, Local, TimeZone as _};
 use rust_decimal::Decimal;
 
@@ -126,6 +126,26 @@ impl Client {
         }
         sort_items(&mut items, schema);
         Ok(items)
+    }
+
+    pub async fn delete_item(
+        &self,
+        table_name: &str,
+        schema: &KeySchemaType,
+        item: &Item,
+    ) -> AppResult<()> {
+        let key = build_key_attributes(item, schema);
+        let result = self
+            .client
+            .delete_item()
+            .table_name(table_name)
+            .set_key(Some(key))
+            .send()
+            .await;
+
+        result
+            .map(|_| ())
+            .map_err(|e| AppError::new("failed to delete item", e))
     }
 }
 
@@ -315,6 +335,61 @@ fn to_key_schema_type(elements: Vec<KeySchemaElement>) -> KeySchemaType {
 fn to_item(attributes: HashMap<String, AwsAttributeValue>) -> Item {
     let attributes = attributes.into_iter().map(|(k, v)| (k, v.into())).collect();
     Item { attributes }
+}
+
+fn build_key_attributes(item: &Item, schema: &KeySchemaType) -> HashMap<String, AwsAttributeValue> {
+    match schema {
+        KeySchemaType::Hash(hash_key) => {
+            let mut key = HashMap::with_capacity(1);
+            let attr = item
+                .attributes
+                .get(hash_key)
+                .expect("missing hash key attribute");
+            key.insert(hash_key.clone(), attribute_to_aws(attr));
+            key
+        }
+        KeySchemaType::HashRange(hash_key, range_key) => {
+            let mut key = HashMap::with_capacity(2);
+            let hash_attr = item
+                .attributes
+                .get(hash_key)
+                .expect("missing hash key attribute");
+            let range_attr = item
+                .attributes
+                .get(range_key)
+                .expect("missing range key attribute");
+            key.insert(hash_key.clone(), attribute_to_aws(hash_attr));
+            key.insert(range_key.clone(), attribute_to_aws(range_attr));
+            key
+        }
+    }
+}
+
+fn attribute_to_aws(attr: &Attribute) -> AwsAttributeValue {
+    match attr {
+        Attribute::S(s) => AwsAttributeValue::S(s.clone()),
+        Attribute::N(n) => AwsAttributeValue::N(n.to_string()),
+        Attribute::B(b) => AwsAttributeValue::B(Blob::new(b.clone())),
+        Attribute::BOOL(b) => AwsAttributeValue::Bool(*b),
+        Attribute::NULL => AwsAttributeValue::Null(true),
+        Attribute::L(list) => {
+            let values = list.iter().map(attribute_to_aws).collect();
+            AwsAttributeValue::L(values)
+        }
+        Attribute::M(map) => {
+            let values = map
+                .iter()
+                .map(|(k, v)| (k.clone(), attribute_to_aws(v)))
+                .collect();
+            AwsAttributeValue::M(values)
+        }
+        Attribute::SS(set) => AwsAttributeValue::Ss(set.iter().cloned().collect()),
+        Attribute::NS(set) => AwsAttributeValue::Ns(set.iter().map(|n| n.to_string()).collect()),
+        Attribute::BS(set) => {
+            let values = set.iter().cloned().map(Blob::new).collect();
+            AwsAttributeValue::Bs(values)
+        }
+    }
 }
 
 impl From<AwsAttributeValue> for Attribute {
