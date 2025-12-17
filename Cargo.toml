@@ -17,13 +17,13 @@ exclude = ["/.github", "/img"]
 [dependencies]
 ansi-to-tui = "7.0.0"
 arboard = "3.6.1"
-aws-config = "1.8.11"
-aws-sdk-dynamodb = "1.100.0"
-aws-smithy-types = "1.3.4"
+aws-config = "1.8.12"
+aws-sdk-dynamodb = "1.101.0"
+aws-smithy-types = "1.3.5"
 base64 = "0.22.1"
 chrono = { version = "0.4.42", features = ["serde"] }
 clap = { version = "4.5.53", features = ["derive"] }
-console = "0.16.1"
+console = "0.16.2"
 humansize = "2.1.3"
 itsuki = "0.2.1"
 laurier = "0.2.0"
