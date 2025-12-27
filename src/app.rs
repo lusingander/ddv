@@ -233,10 +233,10 @@ impl App {
     }
 
     fn complete_initialize(&mut self, result: AppResult<Vec<Table>>) {
-        self.loading = false;
         match result {
             Ok(tables) => {
                 if tables.is_empty() {
+                    self.loading = false;
                     self.tx.send(AppEvent::NotifyWarning(AppError::msg(
                         "No tables found.",
                     )));
