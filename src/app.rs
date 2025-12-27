@@ -233,22 +233,28 @@ impl App {
     }
 
     fn complete_initialize(&mut self, result: AppResult<Vec<Table>>) {
+        self.loading = false;
         match result {
             Ok(tables) => {
-                let view = View::of_table_list(
-                    tables,
-                    &self.mapper,
-                    self.config.ui.table_list.clone(),
-                    self.theme,
-                    self.tx.clone(),
-                );
-                self.view_stack.pop();
-                self.view_stack.push(view);
-                // not update loading here
+                if tables.is_empty() {
+                    self.tx.send(AppEvent::NotifyWarning(AppError::msg(
+                        "No tables found.",
+                    )));
+                } else {
+                    let view = View::of_table_list(
+                        tables,
+                        &self.mapper,
+                        self.config.ui.table_list.clone(),
+                        self.theme,
+                        self.tx.clone(),
+                    );
+                    self.view_stack.pop();
+                    self.view_stack.push(view);
+                    // not update loading here
+                }
             }
             Err(e) => {
                 self.tx.send(AppEvent::NotifyError(e));
-                self.loading = false;
             }
         }
     }
