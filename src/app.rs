@@ -255,6 +255,7 @@ impl App {
             }
             Err(e) => {
                 self.tx.send(AppEvent::NotifyError(e));
+                self.loading = false;
             }
         }
     }
