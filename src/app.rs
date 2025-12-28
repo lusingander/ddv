@@ -237,9 +237,8 @@ impl App {
             Ok(tables) => {
                 if tables.is_empty() {
                     self.loading = false;
-                    self.tx.send(AppEvent::NotifyWarning(AppError::msg(
-                        "No tables found.",
-                    )));
+                    self.tx
+                        .send(AppEvent::NotifyWarning(AppError::msg("No tables found.")));
                 } else {
                     let view = View::of_table_list(
                         tables,
