@@ -71,7 +71,7 @@ impl App {
         &mut self,
         terminal: &mut Terminal<B>,
         rx: Receiver,
-    ) -> std::io::Result<()> {
+    ) -> Result<(), B::Error> {
         loop {
             terminal.draw(|f| self.render(f))?;
             match rx.recv() {
