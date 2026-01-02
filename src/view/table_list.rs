@@ -105,7 +105,7 @@ impl TableListView {
             focused: Focused::List,
             preview_type: PreviewType::KeyValue,
         };
-        view.load_table_description();
+        view.load_table_description(true);
         view.update_preview();
         view
     }
@@ -123,7 +123,7 @@ impl TableListView {
                 }
                 => {
                     self.update_filter(key_event);
-                    self.load_table_description();
+                    self.load_table_description(true);
                     self.update_preview();
                 }
             }
@@ -135,32 +135,32 @@ impl TableListView {
                 handle_user_events! { user_events =>
                     UserEvent::Down => {
                         self.list_state.select_next();
-                        self.load_table_description();
+                        self.load_table_description(true);
                         self.update_preview();
                     }
                     UserEvent::Up => {
                         self.list_state.select_prev();
-                        self.load_table_description();
+                        self.load_table_description(true);
                         self.update_preview();
                     }
                     UserEvent::PageDown => {
                         self.list_state.select_next_page();
-                        self.load_table_description();
+                        self.load_table_description(true);
                         self.update_preview();
                     }
                     UserEvent::PageUp => {
                         self.list_state.select_prev_page();
-                        self.load_table_description();
+                        self.load_table_description(true);
                         self.update_preview();
                     }
                     UserEvent::GoToBottom => {
                         self.list_state.select_last();
-                        self.load_table_description();
+                        self.load_table_description(true);
                         self.update_preview();
                     }
                     UserEvent::GoToTop => {
                         self.list_state.select_first();
-                        self.load_table_description();
+                        self.load_table_description(true);
                         self.update_preview();
                     }
                     UserEvent::QuickFilter => {
@@ -241,7 +241,7 @@ impl TableListView {
                         self.copy_table_descriptions_to_clipboard();
                     }
                     UserEvent::Reload => {
-                        self.reload_table_list();
+                        self.load_table_description(false);
                     }
                     UserEvent::Help => {
                         self.open_help();
@@ -442,11 +442,12 @@ impl TableListView {
 }
 
 impl TableListView {
-    fn load_table_description(&self) {
+    fn load_table_description(&self, use_cache: bool) {
         if let Some(name) = self.current_selected_table_name() {
-            if self.table_descriptions.contains_key(name) {
+            if use_cache && self.table_descriptions.contains_key(name) {
                 return;
             }
+
             self.tx.send(AppEvent::LoadTableDescription(name.into()));
         }
     }
