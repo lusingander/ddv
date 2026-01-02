@@ -186,6 +186,9 @@ impl TableListView {
                     UserEvent::CopyToClipboard => {
                         self.copy_table_name_to_clipboard();
                     }
+                    UserEvent::Reload => {
+                        self.reload_table_list();
+                    }
                     UserEvent::Help => {
                         self.open_help();
                     }
@@ -236,6 +239,9 @@ impl TableListView {
                     }
                     UserEvent::CopyToClipboard => {
                         self.copy_table_descriptions_to_clipboard();
+                    }
+                    UserEvent::Reload => {
+                        self.reload_table_list();
                     }
                     UserEvent::Help => {
                         self.open_help();
@@ -582,6 +588,10 @@ impl TableListView {
             "table descriptions".into(),
             content,
         ));
+    }
+
+    fn reload_table_list(&self) {
+        self.tx.send(AppEvent::Initialize);
     }
 
     fn open_help(&self) {
