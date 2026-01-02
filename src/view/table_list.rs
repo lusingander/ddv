@@ -105,7 +105,7 @@ impl TableListView {
             focused: Focused::List,
             preview_type: PreviewType::KeyValue,
         };
-        view.load_table_description(true);
+        view.load_table_description();
         view.update_preview();
         view
     }
@@ -123,7 +123,7 @@ impl TableListView {
                 }
                 => {
                     self.update_filter(key_event);
-                    self.load_table_description(true);
+                    self.load_table_description();
                     self.update_preview();
                 }
             }
@@ -135,32 +135,32 @@ impl TableListView {
                 handle_user_events! { user_events =>
                     UserEvent::Down => {
                         self.list_state.select_next();
-                        self.load_table_description(true);
+                        self.load_table_description();
                         self.update_preview();
                     }
                     UserEvent::Up => {
                         self.list_state.select_prev();
-                        self.load_table_description(true);
+                        self.load_table_description();
                         self.update_preview();
                     }
                     UserEvent::PageDown => {
                         self.list_state.select_next_page();
-                        self.load_table_description(true);
+                        self.load_table_description();
                         self.update_preview();
                     }
                     UserEvent::PageUp => {
                         self.list_state.select_prev_page();
-                        self.load_table_description(true);
+                        self.load_table_description();
                         self.update_preview();
                     }
                     UserEvent::GoToBottom => {
                         self.list_state.select_last();
-                        self.load_table_description(true);
+                        self.load_table_description();
                         self.update_preview();
                     }
                     UserEvent::GoToTop => {
                         self.list_state.select_first();
-                        self.load_table_description(true);
+                        self.load_table_description();
                         self.update_preview();
                     }
                     UserEvent::QuickFilter => {
@@ -241,7 +241,7 @@ impl TableListView {
                         self.copy_table_descriptions_to_clipboard();
                     }
                     UserEvent::Reload => {
-                        self.load_table_description(false);
+                        self.reload_table_description();
                     }
                     UserEvent::Help => {
                         self.open_help();
@@ -349,8 +349,8 @@ fn build_short_helps(
         BuildShortHelpsItem::single(UserEvent::QuickFilter, "Filter", 3),
         BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 4),
         BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 7),
-        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 6),
-        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 5),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 5),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 6),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     #[rustfmt::skip]
@@ -362,8 +362,8 @@ fn build_short_helps(
         BuildShortHelpsItem::single(UserEvent::Reset, "Clear filter", 3),
         BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 4),
         BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 7),
-        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 6),
-        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 5),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 5),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 6),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     #[rustfmt::skip]
@@ -374,8 +374,8 @@ fn build_short_helps(
         BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 2),
         BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 5),
         BuildShortHelpsItem::group(vec![UserEvent::ToggleWrap, UserEvent::ToggleNumber], "Toggle wrap/number", 7),
-        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 3),
-        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 4),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 4),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 3),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     (
@@ -448,12 +448,18 @@ impl TableListView {
 }
 
 impl TableListView {
-    fn load_table_description(&self, use_cache: bool) {
+    fn load_table_description(&self) {
         if let Some(name) = self.current_selected_table_name() {
-            if use_cache && self.table_descriptions.contains_key(name) {
+            if self.table_descriptions.contains_key(name) {
                 return;
             }
 
+            self.tx.send(AppEvent::LoadTableDescription(name.into()));
+        }
+    }
+
+    fn reload_table_description(&self) {
+        if let Some(name) = self.current_selected_table_name() {
             self.tx.send(AppEvent::LoadTableDescription(name.into()));
         }
     }
