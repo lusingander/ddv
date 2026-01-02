@@ -290,6 +290,7 @@ fn build_helps(
         BuildHelpsItem::new(UserEvent::NextPreview, "Switch to next preview"),
         BuildHelpsItem::new(UserEvent::PrevPreview, "Switch to prev preview"),
         BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy table name"),
+        BuildHelpsItem::new(UserEvent::Reload, "Reload table list"),
     ];
     #[rustfmt::skip]
     let list_filtered_helps = vec![
@@ -304,6 +305,7 @@ fn build_helps(
         BuildHelpsItem::new(UserEvent::NextPreview, "Switch to next preview"),
         BuildHelpsItem::new(UserEvent::PrevPreview, "Switch to prev preview"),
         BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy table name"),
+        BuildHelpsItem::new(UserEvent::Reload, "Reload table list"),
     ];
     #[rustfmt::skip]
     let detail_helps = vec![
@@ -322,6 +324,7 @@ fn build_helps(
         BuildHelpsItem::new(UserEvent::ToggleWrap, "Toggle wrap"),
         BuildHelpsItem::new(UserEvent::ToggleNumber, "Toggle number"),
         BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy table descriptions"),
+        BuildHelpsItem::new(UserEvent::Reload, "Reload table details"),
     ];
     (
         build_help_spans(list_helps, mapper, theme),
@@ -341,35 +344,38 @@ fn build_short_helps(
     let list_helps = vec![
         BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
         BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select", 2),
-        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 7),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 8),
         BuildShortHelpsItem::single(UserEvent::Confirm, "Open", 1),
         BuildShortHelpsItem::single(UserEvent::QuickFilter, "Filter", 3),
         BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 4),
-        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 6),
-        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 5),
+        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 7),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 6),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 5),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     #[rustfmt::skip]
     let list_filtered_helps = vec![
         BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
         BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select", 2),
-        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 7),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 8),
         BuildShortHelpsItem::single(UserEvent::Confirm, "Open", 1),
         BuildShortHelpsItem::single(UserEvent::Reset, "Clear filter", 3),
         BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 4),
-        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 6),
-        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 5),
+        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 7),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 6),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 5),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     #[rustfmt::skip]
     let detail_helps = vec![
         BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
         BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Scroll", 1),
-        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 5),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 6),
         BuildShortHelpsItem::single(UserEvent::NextPane, "Switch pane", 2),
-        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 4),
-        BuildShortHelpsItem::group(vec![UserEvent::ToggleWrap, UserEvent::ToggleNumber], "Toggle wrap/number", 6),
-        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 3),
+        BuildShortHelpsItem::single(UserEvent::NextPreview, "Switch preview", 5),
+        BuildShortHelpsItem::group(vec![UserEvent::ToggleWrap, UserEvent::ToggleNumber], "Toggle wrap/number", 7),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 3),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 4),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     (
