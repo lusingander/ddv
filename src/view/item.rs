@@ -26,14 +26,18 @@ pub struct ItemView {
     item: Item,
     key_string: String,
 
-    helps: Vec<Spans>,
-    short_helps: Vec<SpansWithPriority>,
+    helps: ItemViewHelps,
     theme: ColorTheme,
     tx: Sender,
 
     scroll_lines_state: ScrollLinesState,
 
     preview_type: PreviewType,
+}
+
+struct ItemViewHelps {
+    item: Vec<Spans>,
+    item_short: Vec<SpansWithPriority>,
 }
 
 #[zero_indexed_enum]
@@ -55,8 +59,7 @@ impl ItemView {
         let key_string = to_key_string(&item, schema);
         let scroll_lines_state =
             ScrollLinesState::new(vec![], ScrollLinesOptions::new(false, false));
-        let helps = build_helps(mapper, theme);
-        let short_helps = build_short_helps(mapper);
+        let helps = ItemViewHelps::new(mapper, theme);
 
         let mut view = ItemView {
             table_description,
@@ -64,7 +67,6 @@ impl ItemView {
             key_string,
 
             helps,
-            short_helps,
             theme,
             tx,
 
@@ -147,7 +149,15 @@ impl ItemView {
     }
 
     pub fn short_helps(&self) -> &[SpansWithPriority] {
-        &self.short_helps
+        &self.helps.item_short
+    }
+}
+
+impl ItemViewHelps {
+    fn new(mapper: &UserEventMapper, theme: ColorTheme) -> Self {
+        let item = build_helps(mapper, theme);
+        let item_short = build_short_helps(mapper);
+        Self { item, item_short }
     }
 }
 
@@ -219,7 +229,7 @@ impl ItemView {
     }
 
     fn open_help(&self) {
-        self.tx.send(AppEvent::OpenHelp(self.helps.clone()))
+        self.tx.send(AppEvent::OpenHelp(self.helps.item.clone()))
     }
 }
 

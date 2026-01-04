@@ -30,12 +30,7 @@ pub struct TableListView {
     tables: Vec<Table>,
     table_descriptions: HashMap<String, TableDescription>,
 
-    list_helps: Vec<Spans>,
-    list_filtered_helps: Vec<Spans>,
-    detail_helps: Vec<Spans>,
-    list_short_helps: Vec<SpansWithPriority>,
-    list_filtered_short_helps: Vec<SpansWithPriority>,
-    detail_short_helps: Vec<SpansWithPriority>,
+    helps: TableListViewHelps,
     config: UiTableListConfig,
     theme: ColorTheme,
     tx: Sender,
@@ -48,6 +43,15 @@ pub struct TableListView {
 
     focused: Focused,
     preview_type: PreviewType,
+}
+
+struct TableListViewHelps {
+    list: Vec<Spans>,
+    list_filtered: Vec<Spans>,
+    detail: Vec<Spans>,
+    list_short: Vec<SpansWithPriority>,
+    list_filtered_short: Vec<SpansWithPriority>,
+    detail_short: Vec<SpansWithPriority>,
 }
 
 enum FilterState {
@@ -81,19 +85,12 @@ impl TableListView {
         let view_indices = (0..tables.len()).collect();
         let scroll_lines_state =
             ScrollLinesState::new(vec![], ScrollLinesOptions::new(false, false));
-        let (list_helps, list_filtered_helps, detail_helps) = build_helps(mapper, theme);
-        let (list_short_helps, list_filtered_short_helps, detail_short_helps) =
-            build_short_helps(mapper);
+        let helps = TableListViewHelps::new(mapper, theme);
 
         let mut view = TableListView {
             tables,
             table_descriptions: HashMap::new(),
-            list_helps,
-            list_filtered_helps,
-            detail_helps,
-            list_short_helps,
-            list_filtered_short_helps,
-            detail_short_helps,
+            helps,
             config,
             theme,
             tx,
@@ -265,10 +262,25 @@ impl TableListView {
     pub fn short_helps(&self) -> &[SpansWithPriority] {
         match self.focused {
             Focused::List => match self.filter_state {
-                FilterState::None => &self.list_short_helps,
-                FilterState::Filtering | FilterState::Filtered => &self.list_filtered_short_helps,
+                FilterState::None => &self.helps.list_short,
+                FilterState::Filtering | FilterState::Filtered => &self.helps.list_filtered_short,
             },
-            Focused::Detail => &self.detail_short_helps,
+            Focused::Detail => &self.helps.detail_short,
+        }
+    }
+}
+
+impl TableListViewHelps {
+    fn new(mapper: &UserEventMapper, theme: ColorTheme) -> Self {
+        let (list, list_filtered, detail) = build_helps(mapper, theme);
+        let (list_short, list_filtered_short, detail_short) = build_short_helps(mapper);
+        Self {
+            list,
+            list_filtered,
+            detail,
+            list_short,
+            list_filtered_short,
+            detail_short,
         }
     }
 }
@@ -611,14 +623,14 @@ impl TableListView {
         match self.focused {
             Focused::List => match self.filter_state {
                 FilterState::None => {
-                    self.tx.send(AppEvent::OpenHelp(self.list_helps.clone()));
+                    self.tx.send(AppEvent::OpenHelp(self.helps.list.clone()));
                 }
                 FilterState::Filtering | FilterState::Filtered => {
                     self.tx
-                        .send(AppEvent::OpenHelp(self.list_filtered_helps.clone()));
+                        .send(AppEvent::OpenHelp(self.helps.list_filtered.clone()));
                 }
             },
-            Focused::Detail => self.tx.send(AppEvent::OpenHelp(self.detail_helps.clone())),
+            Focused::Detail => self.tx.send(AppEvent::OpenHelp(self.helps.detail.clone())),
         }
     }
 }

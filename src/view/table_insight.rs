@@ -17,12 +17,16 @@ use crate::{
 pub struct TableInsightView {
     table_insight: TableInsight,
 
-    helps: Vec<Spans>,
-    short_helps: Vec<SpansWithPriority>,
+    helps: TableInsightViewHelps,
     theme: ColorTheme,
     tx: Sender,
 
     scroll_lines_state: ScrollLinesState,
+}
+
+struct TableInsightViewHelps {
+    insight: Vec<Spans>,
+    insight_short: Vec<SpansWithPriority>,
 }
 
 impl TableInsightView {
@@ -35,14 +39,12 @@ impl TableInsightView {
         let lines = get_insight_lines(&table_insight, &theme);
         let scroll_lines_state =
             ScrollLinesState::new(lines, ScrollLinesOptions::new(false, false));
-        let helps = build_helps(mapper, theme);
-        let short_helps = build_short_helps(mapper);
+        let helps = TableInsightViewHelps::new(mapper, theme);
 
         TableInsightView {
             table_insight,
 
             helps,
-            short_helps,
             theme,
             tx,
 
@@ -108,7 +110,18 @@ impl TableInsightView {
     }
 
     pub fn short_helps(&self) -> &[SpansWithPriority] {
-        &self.short_helps
+        &self.helps.insight_short
+    }
+}
+
+impl TableInsightViewHelps {
+    fn new(mapper: &UserEventMapper, theme: ColorTheme) -> Self {
+        let insight = build_helps(mapper, theme);
+        let insight_short = build_short_helps(mapper);
+        Self {
+            insight,
+            insight_short,
+        }
     }
 }
 
@@ -146,7 +159,7 @@ fn build_short_helps(mapper: &UserEventMapper) -> Vec<SpansWithPriority> {
 
 impl TableInsightView {
     fn open_help(&self) {
-        self.tx.send(AppEvent::OpenHelp(self.helps.clone()))
+        self.tx.send(AppEvent::OpenHelp(self.helps.insight.clone()))
     }
 }
 

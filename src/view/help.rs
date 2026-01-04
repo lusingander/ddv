@@ -21,9 +21,13 @@ use crate::{
 
 pub struct HelpView {
     target_view_helps: Vec<Spans>,
-    short_helps: Vec<SpansWithPriority>,
+    helps: HelpViewHelps,
     theme: ColorTheme,
     tx: Sender,
+}
+
+struct HelpViewHelps {
+    short: Vec<SpansWithPriority>,
 }
 
 impl HelpView {
@@ -33,12 +37,11 @@ impl HelpView {
         theme: ColorTheme,
         tx: Sender,
     ) -> Self {
-        let short_helps = build_short_helps(mapper);
+        let helps = HelpViewHelps::new(mapper);
 
         HelpView {
             target_view_helps,
-
-            short_helps,
+            helps,
             theme,
             tx,
         }
@@ -76,7 +79,14 @@ impl HelpView {
     }
 
     pub fn short_helps(&self) -> &[SpansWithPriority] {
-        &self.short_helps
+        &self.helps.short
+    }
+}
+
+impl HelpViewHelps {
+    fn new(mapper: &UserEventMapper) -> Self {
+        let short = build_short_helps(mapper);
+        Self { short }
     }
 }
 

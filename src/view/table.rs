@@ -31,19 +31,23 @@ pub struct TableView {
     table_description: TableDescription,
     items: Vec<Item>,
 
-    table_helps: Vec<Spans>,
-    attr_helps: Vec<Spans>,
-    table_short_helps: Vec<SpansWithPriority>,
-    attr_short_helps: Vec<SpansWithPriority>,
     config: UiTableConfig,
     theme: ColorTheme,
     tx: Sender,
 
+    helps: TableViewHelps,
     row_cells: Vec<Vec<Cell<'static>>>,
     header_row_cells: Vec<Cell<'static>>,
     table_state: TableState,
     attr_expanded: bool,
     attr_scroll_lines_state: ScrollLinesState,
+}
+
+struct TableViewHelps {
+    table: Vec<Spans>,
+    attr: Vec<Spans>,
+    table_short: Vec<SpansWithPriority>,
+    attr_short: Vec<SpansWithPriority>,
 }
 
 impl TableView {
@@ -57,8 +61,7 @@ impl TableView {
     ) -> Self {
         let (table_state, row_cells, header_row_cells) =
             new_table_state(&table_description, &items, &config, theme);
-        let (table_helps, attr_helps) = build_helps(mapper, theme);
-        let (table_short_helps, attr_short_helps) = build_short_helps(mapper);
+        let helps = TableViewHelps::new(mapper, theme);
         let attr_scroll_lines_state =
             ScrollLinesState::new(vec![], ScrollLinesOptions::new(false, false));
 
@@ -66,14 +69,11 @@ impl TableView {
             table_description,
             items,
 
-            table_helps,
-            attr_helps,
-            table_short_helps,
-            attr_short_helps,
             config,
             theme,
             tx,
 
+            helps,
             row_cells,
             header_row_cells,
             table_state,
@@ -226,9 +226,22 @@ impl TableView {
 
     pub fn short_helps(&self) -> &[SpansWithPriority] {
         if self.attr_expanded {
-            &self.attr_short_helps
+            &self.helps.attr_short
         } else {
-            &self.table_short_helps
+            &self.helps.table_short
+        }
+    }
+}
+
+impl TableViewHelps {
+    fn new(mapper: &UserEventMapper, theme: ColorTheme) -> TableViewHelps {
+        let (table_helps, attr_helps) = build_helps(mapper, theme);
+        let (table_short_helps, attr_short_helps) = build_short_helps(mapper);
+        TableViewHelps {
+            table: table_helps,
+            attr: attr_helps,
+            table_short: table_short_helps,
+            attr_short: attr_short_helps,
         }
     }
 }
@@ -436,9 +449,9 @@ impl TableView {
 
     fn open_help(&self) {
         if self.attr_expanded {
-            self.tx.send(AppEvent::OpenHelp(self.attr_helps.clone()))
+            self.tx.send(AppEvent::OpenHelp(self.helps.attr.clone()))
         } else {
-            self.tx.send(AppEvent::OpenHelp(self.table_helps.clone()))
+            self.tx.send(AppEvent::OpenHelp(self.helps.table.clone()))
         }
     }
 }
