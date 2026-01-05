@@ -2,6 +2,7 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Rect},
     style::{Color, Style},
+    text::Text,
     widgets::{Cell, Row, StatefulWidget, Table as RatatuiTable, TableState as RatatuiTableState},
 };
 
@@ -268,18 +269,18 @@ impl TableColor {
     }
 }
 pub struct Table<'a> {
-    row_cells: &'a [Vec<Cell<'static>>],
+    row_cell_items: &'a [Vec<CellItem<'static>>],
     header_row_cells: &'a [Cell<'static>],
     color: TableColor,
 }
 
 impl<'a> Table<'a> {
     pub fn new(
-        row_cells: &'a [Vec<Cell<'static>>],
+        row_cell_items: &'a [Vec<CellItem<'static>>],
         header_row_cells: &'a [Cell<'static>],
     ) -> Table<'a> {
         Table {
-            row_cells,
+            row_cell_items,
             header_row_cells,
             color: Default::default(),
         }
@@ -309,11 +310,20 @@ impl StatefulWidget for Table<'_> {
         }
 
         let rows = self
-            .row_cells
+            .row_cell_items
             .iter()
             .skip(state.offset_row)
             .take(state.height)
-            .map(|cells| Row::new(cells.iter().skip(state.offset_col).take(count).cloned()));
+            .map(|cell_items| {
+                Row::new(
+                    cell_items
+                        .iter()
+                        .skip(state.offset_col)
+                        .take(count)
+                        .map(|cell_item| &cell_item.cell)
+                        .cloned(),
+                )
+            });
         let widths = state
             .col_widths
             .iter()
@@ -339,5 +349,22 @@ impl StatefulWidget for Table<'_> {
             );
 
         StatefulWidget::render(table, area, buf, &mut state.ratatui_table_state);
+    }
+}
+
+pub struct CellItem<'a> {
+    cell: Cell<'a>,
+    plain: String,
+}
+
+impl<'a> CellItem<'a> {
+    pub fn new<T>(content: T, plain: impl Into<String>) -> Self
+    where
+        T: Into<Text<'a>>,
+    {
+        Self {
+            cell: Cell::new(content),
+            plain: plain.into(),
+        }
     }
 }
