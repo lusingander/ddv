@@ -22,7 +22,7 @@ use crate::{
         SpansWithPriority,
     },
     view::common::{attribute_to_spans, cut_spans_by_width, to_highlighted_lines},
-    widget::{ScrollLines, ScrollLinesOptions, ScrollLinesState, Table, TableState},
+    widget::{CellItem, ScrollLines, ScrollLinesOptions, ScrollLinesState, Table, TableState},
 };
 
 const ELLIPSIS: &str = "...";
@@ -36,7 +36,7 @@ pub struct TableView {
     tx: Sender,
 
     helps: TableViewHelps,
-    row_cells: Vec<Vec<Cell<'static>>>,
+    row_cell_items: Vec<Vec<CellItem<'static>>>,
     header_row_cells: Vec<Cell<'static>>,
     table_state: TableState,
     attr_expanded: bool,
@@ -59,7 +59,7 @@ impl TableView {
         theme: ColorTheme,
         tx: Sender,
     ) -> Self {
-        let (table_state, row_cells, header_row_cells) =
+        let (table_state, row_cell_items, header_row_cells) =
             new_table_state(&table_description, &items, &config, theme);
         let helps = TableViewHelps::new(mapper, theme);
         let attr_scroll_lines_state =
@@ -74,7 +74,7 @@ impl TableView {
             tx,
 
             helps,
-            row_cells,
+            row_cell_items,
             header_row_cells,
             table_state,
             attr_expanded: false,
@@ -216,7 +216,7 @@ impl TableView {
         f.render_widget(block, area);
 
         let table_area = area.inner(Margin::new(2, 1));
-        let table = Table::new(&self.row_cells, &self.header_row_cells).theme(&self.theme);
+        let table = Table::new(&self.row_cell_items, &self.header_row_cells).theme(&self.theme);
         f.render_stateful_widget(table, table_area, &mut self.table_state);
 
         if self.attr_expanded {
@@ -401,15 +401,15 @@ impl TableView {
             let attribute_keys =
                 list_attribute_keys(&self.items, &self.table_description.key_schema_type);
             let max_attribute_width = self.table_state.selected_col_width().unwrap();
-            for (i, cells) in self.row_cells.iter_mut().enumerate() {
+            for (i, cell_items) in self.row_cell_items.iter_mut().enumerate() {
                 let item = &self.items[i];
                 let key = &attribute_keys[col];
-                let (cell, _) = item
+                let (cell_item, _) = item
                     .attributes
                     .get(key)
-                    .map(|attr| attribute_to_cell(attr, max_attribute_width, &self.theme))
-                    .unwrap_or(undefined_cell(&self.theme));
-                cells[col] = cell;
+                    .map(|attr| attribute_to_cell_item(attr, max_attribute_width, &self.theme))
+                    .unwrap_or(undefined_cell_item(&self.theme));
+                cell_items[col] = cell_item;
             }
         }
     }
@@ -461,29 +461,29 @@ fn new_table_state(
     items: &[Item],
     config: &UiTableConfig,
     theme: ColorTheme,
-) -> (TableState, Vec<Vec<Cell<'static>>>, Vec<Cell<'static>>) {
+) -> (TableState, Vec<Vec<CellItem<'static>>>, Vec<Cell<'static>>) {
     let attribute_keys = list_attribute_keys(items, &table_description.key_schema_type);
     let total_rows = items.len();
     let total_cols = attribute_keys.len();
 
     let mut max_width_vec: Vec<usize> = vec![0; total_cols];
 
-    let mut row_cells: Vec<Vec<Cell>> = Vec::with_capacity(total_rows);
+    let mut row_cell_items: Vec<Vec<CellItem>> = Vec::with_capacity(total_rows);
     for item in items {
-        let mut cells: Vec<Cell> = Vec::new();
+        let mut cell_items: Vec<CellItem> = Vec::new();
         for (i, key) in attribute_keys.iter().enumerate() {
-            let (cell, width) = item
+            let (cell_item, width) = item
                 .attributes
                 .get(key)
-                .map(|attr| attribute_to_cell(attr, config.max_attribute_width, &theme))
-                .unwrap_or(undefined_cell(&theme));
-            cells.push(cell);
+                .map(|attr| attribute_to_cell_item(attr, config.max_attribute_width, &theme))
+                .unwrap_or(undefined_cell_item(&theme));
+            cell_items.push(cell_item);
 
             if width > max_width_vec[i] {
                 max_width_vec[i] = width;
             }
         }
-        row_cells.push(cells);
+        row_cell_items.push(cell_items);
     }
 
     let mut header_row_cells: Vec<Cell> = Vec::with_capacity(total_cols);
@@ -497,19 +497,23 @@ fn new_table_state(
 
     let table_state = TableState::new(total_rows, total_cols, max_width_vec);
 
-    (table_state, row_cells, header_row_cells)
+    (table_state, row_cell_items, header_row_cells)
 }
 
-fn attribute_to_cell(
+fn attribute_to_cell_item(
     attr: &Attribute,
     max_attribute_width: usize,
     theme: &ColorTheme,
-) -> (Cell<'static>, usize) {
+) -> (CellItem<'static>, usize) {
     let spans = attribute_to_spans(attr, theme);
+    let plain = spans
+        .iter()
+        .map(|span| span.content.as_ref())
+        .collect::<String>();
     let spans = cut_spans_by_width(spans, max_attribute_width, ELLIPSIS, theme);
     let line = Line::from(spans);
     let width = line.width();
-    (Cell::new(line), width)
+    (CellItem::new(line, plain), width)
 }
 
 fn key_to_cell(key: &str, config: &UiTableConfig, theme: &ColorTheme) -> (Cell<'static>, usize) {
@@ -520,8 +524,9 @@ fn key_to_cell(key: &str, config: &UiTableConfig, theme: &ColorTheme) -> (Cell<'
     (Cell::new(line), width)
 }
 
-fn undefined_cell(theme: &ColorTheme) -> (Cell<'static>, usize) {
-    (Cell::new("-").fg(theme.cell_undefined_fg), 1)
+fn undefined_cell_item(theme: &ColorTheme) -> (CellItem<'static>, usize) {
+    let s = "-";
+    (CellItem::new(s.fg(theme.cell_undefined_fg), s), 1)
 }
 
 fn get_raw_json_string(item: &Item, schema: &KeySchemaType) -> String {
