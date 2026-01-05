@@ -1,4 +1,4 @@
-use laurier::layout::calc_centered_area;
+use laurier::{dialog::Dialog, layout::calc_centered_area};
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Margin, Rect},
@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, BorderType, Padding, Paragraph, Widget},
 };
 
-use crate::{color::ColorTheme, widget::Dialog};
+use crate::color::ColorTheme;
 
 #[derive(Debug, Default)]
 struct LoadingDialogColor {
