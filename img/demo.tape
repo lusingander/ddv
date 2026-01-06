@@ -76,6 +76,15 @@ Type@500ms "jjj"
 Sleep 500ms
 Type "h"
 Sleep 1s
+
+Type "/"
+Sleep 500ms
+Type@200ms "critical"
+Screenshot "./img/table-filtering.png"
+Sleep 500ms
+Enter
+Sleep 1s
+
 Enter
 
 Sleep 2s
