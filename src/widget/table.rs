@@ -2,7 +2,7 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Rect},
     style::{Color, Style},
-    text::Text,
+    text::{Line, Span},
     widgets::{Cell, Row, StatefulWidget, Table as RatatuiTable, TableState as RatatuiTableState},
 };
 
@@ -336,8 +336,7 @@ impl StatefulWidget for Table<'_> {
                         .iter()
                         .skip(state.offset_col)
                         .take(count)
-                        .map(|cell_item| &cell_item.cell)
-                        .cloned(),
+                        .map(|cell_item| cell_item.cell()),
                 )
             });
         let widths = state
@@ -369,19 +368,20 @@ impl StatefulWidget for Table<'_> {
 }
 
 pub struct CellItem<'a> {
-    cell: Cell<'a>,
+    content: Vec<Span<'a>>,
     plain: String,
 }
 
 impl<'a> CellItem<'a> {
-    pub fn new<T>(content: T, plain: impl Into<String>) -> Self
-    where
-        T: Into<Text<'a>>,
-    {
+    pub fn new(content: Vec<Span<'a>>, plain: impl Into<String>) -> Self {
         Self {
-            cell: Cell::new(content),
+            content,
             plain: plain.into(),
         }
+    }
+
+    pub fn cell(&self) -> Cell<'a> {
+        Cell::from(Line::from(self.content.clone()))
     }
 
     pub fn matched_index(&self, query: &str) -> Option<usize> {

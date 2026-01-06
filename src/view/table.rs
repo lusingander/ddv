@@ -3,7 +3,7 @@ use ratatui::{
     layout::{Margin, Rect},
     style::Stylize,
     symbols::border,
-    text::Line,
+    text::{Line, Span},
     widgets::{Block, Cell, Clear},
     Frame,
 };
@@ -622,10 +622,9 @@ fn attribute_to_cell_item(
         .iter()
         .map(|span| span.content.as_ref())
         .collect::<String>();
-    let spans = cut_spans_by_width(spans, max_attribute_width, ELLIPSIS, theme);
-    let line = Line::from(spans);
-    let width = line.width();
-    (CellItem::new(line, plain), width)
+    let cut_spans = cut_spans_by_width(spans, max_attribute_width, ELLIPSIS, theme);
+    let width = cut_spans.iter().map(Span::width).sum();
+    (CellItem::new(cut_spans, plain), width)
 }
 
 fn key_to_cell(key: &str, config: &UiTableConfig, theme: &ColorTheme) -> (Cell<'static>, usize) {
@@ -638,7 +637,8 @@ fn key_to_cell(key: &str, config: &UiTableConfig, theme: &ColorTheme) -> (Cell<'
 
 fn undefined_cell_item(theme: &ColorTheme) -> (CellItem<'static>, usize) {
     let s = "-";
-    (CellItem::new(s.fg(theme.cell_undefined_fg), s), 1)
+    let content = vec![s.fg(theme.cell_undefined_fg)];
+    (CellItem::new(content, s), 1)
 }
 
 fn get_raw_json_string(item: &Item, schema: &KeySchemaType) -> String {
