@@ -43,6 +43,22 @@ impl TableState {
         }
     }
 
+    pub fn with_new_total_rows(&self, total_rows: usize) -> TableState {
+        TableState {
+            selected_row: 0,
+            selected_col: self.selected_col,
+            offset_row: 0,
+            offset_col: self.offset_col,
+            total_rows,
+            total_cols: self.total_cols,
+            width: self.width,
+            height: self.height,
+            col_widths: self.col_widths.clone(),
+
+            ratatui_table_state: self.ratatui_table_state.with_selected(Some(0)),
+        }
+    }
+
     pub fn select_next_row(&mut self) {
         if self.total_rows == 0 {
             return;
@@ -269,14 +285,14 @@ impl TableColor {
     }
 }
 pub struct Table<'a> {
-    row_cell_items: &'a [Vec<CellItem<'static>>],
+    row_cell_items: &'a [&'a Vec<CellItem<'static>>],
     header_row_cells: &'a [Cell<'static>],
     color: TableColor,
 }
 
 impl<'a> Table<'a> {
     pub fn new(
-        row_cell_items: &'a [Vec<CellItem<'static>>],
+        row_cell_items: &'a [&'a Vec<CellItem<'static>>],
         header_row_cells: &'a [Cell<'static>],
     ) -> Table<'a> {
         Table {
@@ -366,5 +382,11 @@ impl<'a> CellItem<'a> {
             cell: Cell::new(content),
             plain: plain.into(),
         }
+    }
+
+    pub fn matched_index(&self, query: &str) -> Option<usize> {
+        let lower_query = query.to_lowercase();
+        let lower_plain = self.plain.to_lowercase();
+        lower_plain.find(&lower_query)
     }
 }

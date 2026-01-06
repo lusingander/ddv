@@ -7,6 +7,7 @@ use ratatui::{
     widgets::{Block, Cell, Clear},
     Frame,
 };
+use tui_input::{backend::crossterm::EventHandler, Input};
 
 use crate::{
     color::ColorTheme,
@@ -16,7 +17,7 @@ use crate::{
         TableDescription, TableInsight,
     },
     event::{AppEvent, Sender, UserEvent, UserEventMapper},
-    handle_user_events,
+    handle_user_events, handle_user_events_with_default,
     help::{
         build_help_spans, build_short_help_spans, BuildHelpsItem, BuildShortHelpsItem, Spans,
         SpansWithPriority,
@@ -41,6 +42,16 @@ pub struct TableView {
     table_state: TableState,
     attr_expanded: bool,
     attr_scroll_lines_state: ScrollLinesState,
+
+    filter_state: FilterState,
+    filter_input: Input,
+    view_indices: Vec<usize>,
+}
+
+enum FilterState {
+    None,
+    Filtering,
+    Filtered,
 }
 
 struct TableViewHelps {
@@ -64,6 +75,7 @@ impl TableView {
         let helps = TableViewHelps::new(mapper, theme);
         let attr_scroll_lines_state =
             ScrollLinesState::new(vec![], ScrollLinesOptions::new(false, false));
+        let view_indices = (0..items.len()).collect();
 
         TableView {
             table_description,
@@ -79,12 +91,30 @@ impl TableView {
             table_state,
             attr_expanded: false,
             attr_scroll_lines_state,
+            filter_state: FilterState::None,
+            filter_input: Input::default(),
+            view_indices,
         }
     }
 }
 
 impl TableView {
-    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, _key_event: KeyEvent) {
+    pub fn handle_user_key_event(&mut self, user_events: Vec<UserEvent>, key_event: KeyEvent) {
+        if let FilterState::Filtering = self.filter_state {
+            handle_user_events_with_default! { user_events =>
+                UserEvent::Confirm => {
+                    self.apply_filter();
+                }
+                UserEvent::Reset => {
+                    self.reset_filter();
+                }
+                => {
+                    self.update_filter(key_event);
+                }
+            }
+            return;
+        }
+
         if self.attr_expanded {
             handle_user_events! { user_events =>
                     UserEvent::Close | UserEvent::Expand => {
@@ -175,6 +205,12 @@ impl TableView {
                     self.table_state.select_prev_col();
                     self.table_state.update_table_state();
                 }
+                UserEvent::QuickFilter => {
+                    self.start_filtering();
+                }
+                UserEvent::Reset => {
+                    self.reset_filter();
+                }
                 UserEvent::Confirm => {
                     self.open_item();
                 }
@@ -216,7 +252,12 @@ impl TableView {
         f.render_widget(block, area);
 
         let table_area = area.inner(Margin::new(2, 1));
-        let table = Table::new(&self.row_cell_items, &self.header_row_cells).theme(&self.theme);
+        let filtered_row_cell_items: Vec<&Vec<CellItem<'static>>> = self
+            .view_indices
+            .iter()
+            .map(|&i| &self.row_cell_items[i])
+            .collect();
+        let table = Table::new(&filtered_row_cell_items, &self.header_row_cells).theme(&self.theme);
         f.render_stateful_widget(table, table_area, &mut self.table_state);
 
         if self.attr_expanded {
@@ -421,6 +462,77 @@ impl TableView {
     fn reload_table(&self) {
         let desc = self.table_description.clone();
         self.tx.send(AppEvent::LoadTableItems(desc));
+    }
+
+    fn start_filtering(&mut self) {
+        match self.filter_state {
+            FilterState::None | FilterState::Filtered => {
+                self.filter_input.reset();
+                self.filter_state = FilterState::Filtering;
+                self.update_status_input();
+            }
+            FilterState::Filtering => {}
+        }
+    }
+
+    fn update_filter(&mut self, key_event: KeyEvent) {
+        let event = &ratatui::crossterm::event::Event::Key(key_event);
+        self.filter_input.handle_event(event);
+        self.filter_view_indices();
+        self.update_status_input();
+    }
+
+    fn update_status_input(&mut self) {
+        let query = format!("/{}", self.filter_input.value());
+        let cursor_pos = self.filter_input.cursor() as u16 + 1; // "/"
+        self.tx
+            .send(AppEvent::UpdateStatusInput(query, Some(cursor_pos)));
+    }
+
+    fn apply_filter(&mut self) {
+        if self.filter_input.value().is_empty() {
+            self.filter_state = FilterState::None;
+        } else {
+            self.filter_state = FilterState::Filtered;
+        }
+        if self.view_indices.is_empty() {
+            self.reset_filter();
+            return;
+        }
+        self.filter_view_indices();
+        self.tx.send(AppEvent::ClearStatus);
+    }
+
+    fn reset_filter(&mut self) {
+        match self.filter_state {
+            FilterState::Filtering | FilterState::Filtered => {
+                self.filter_input.reset();
+                self.filter_state = FilterState::None;
+                // let orig_idx = self.view_indices[self.list_state.selected];
+                self.filter_view_indices();
+                // self.list_state.select_index(orig_idx);
+                self.tx.send(AppEvent::ClearStatus);
+            }
+            FilterState::None => {}
+        }
+    }
+
+    fn filter_view_indices(&mut self) {
+        let query = self.filter_input.value();
+        self.view_indices = self
+            .row_cell_items
+            .iter()
+            .enumerate()
+            .filter(|(_, cell_items)| {
+                cell_items
+                    .iter()
+                    .any(|cell_item| cell_item.matched_index(query).is_some())
+            })
+            .map(|(i, _)| i)
+            .collect();
+        self.table_state = self
+            .table_state
+            .with_new_total_rows(self.view_indices.len());
     }
 
     fn copy_to_clipboard(&self) {
