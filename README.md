@@ -120,7 +120,7 @@ max_expand_height = 6
 
 ## Screenshots
 
-<img src="./img/table-list-list.png" width=400> <img src="./img/table-list-detail-json.png" width=400> <img src="./img/table-list-filtering.png" width=400> <img src="./img/table.png" width=400> <img src="./img/table-expand-attr.png" width=400> <img src="./img/item-kv.png" width=400> <img src="./img/item-plain-json.png" width=400> <img src="./img/item-raw-json.png" width=400> <img src="./img/table-insight.png" width=400>
+<img src="./img/table-list-list.png" width=400> <img src="./img/table-list-detail-json.png" width=400> <img src="./img/table-list-filtering.png" width=400> <img src="./img/table.png" width=400> <img src="./img/table-filtering.png" width=400> <img src="./img/table-expand-attr.png" width=400> <img src="./img/item-kv.png" width=400> <img src="./img/item-plain-json.png" width=400> <img src="./img/item-raw-json.png" width=400> <img src="./img/table-insight.png" width=400>
 
 ## Related projects
 
