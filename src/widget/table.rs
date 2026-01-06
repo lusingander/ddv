@@ -1,3 +1,4 @@
+use laurier::highlight::highlight_matched_text;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Rect},
@@ -7,6 +8,8 @@ use ratatui::{
 };
 
 use crate::color::ColorTheme;
+
+const ELLIPSIS: &str = "...";
 
 pub struct TableState {
     pub selected_row: usize,
@@ -273,6 +276,8 @@ struct TableColor {
     selected_fg: Color,
     selected_bg: Color,
     selected_axis_bg: Color,
+    matched_fg: Color,
+    matched_bg: Color,
 }
 
 impl TableColor {
@@ -281,12 +286,15 @@ impl TableColor {
             selected_fg: theme.selected_fg,
             selected_bg: theme.selected_bg,
             selected_axis_bg: theme.selected_axis_bg,
+            matched_fg: theme.quick_filter_matched_fg,
+            matched_bg: theme.quick_filter_matched_bg,
         }
     }
 }
 pub struct Table<'a> {
     row_cell_items: &'a [&'a Vec<CellItem<'static>>],
     header_row_cells: &'a [Cell<'static>],
+    query: &'a str,
     color: TableColor,
 }
 
@@ -294,10 +302,12 @@ impl<'a> Table<'a> {
     pub fn new(
         row_cell_items: &'a [&'a Vec<CellItem<'static>>],
         header_row_cells: &'a [Cell<'static>],
+        query: &'a str,
     ) -> Table<'a> {
         Table {
             row_cell_items,
             header_row_cells,
+            query,
             color: Default::default(),
         }
     }
@@ -334,9 +344,17 @@ impl StatefulWidget for Table<'_> {
                 Row::new(
                     cell_items
                         .iter()
+                        .enumerate()
                         .skip(state.offset_col)
                         .take(count)
-                        .map(|cell_item| cell_item.cell()),
+                        .map(|(i, cell_item)| {
+                            cell_item.cell(
+                                self.query,
+                                state.col_widths[i],
+                                self.color.matched_fg,
+                                self.color.matched_bg,
+                            )
+                        }),
                 )
             });
         let widths = state
@@ -370,18 +388,43 @@ impl StatefulWidget for Table<'_> {
 pub struct CellItem<'a> {
     content: Vec<Span<'a>>,
     plain: String,
+    plain_width: usize,
 }
 
 impl<'a> CellItem<'a> {
-    pub fn new(content: Vec<Span<'a>>, plain: impl Into<String>) -> Self {
+    pub fn new(content: Vec<Span<'a>>, plain: impl Into<String>, plain_width: usize) -> Self {
         Self {
             content,
             plain: plain.into(),
+            plain_width,
         }
     }
 
-    pub fn cell(&self) -> Cell<'a> {
-        Cell::from(Line::from(self.content.clone()))
+    fn cell(
+        &self,
+        query: &str,
+        col_width: usize,
+        matched_fg: Color,
+        matched_bg: Color,
+    ) -> Cell<'a> {
+        if query.is_empty() {
+            return Cell::from(Line::from(self.content.clone()));
+        }
+        match self.matched_index(query) {
+            Some(i) => {
+                let mut hm = highlight_matched_text(self.content.clone());
+                if self.plain_width > col_width {
+                    hm = hm.ellipsis(ELLIPSIS);
+                }
+                let spans = hm
+                    .matched_range(i, i + query.len())
+                    .matched_fg(matched_fg)
+                    .matched_bg(matched_bg)
+                    .into_spans();
+                Cell::from(Line::from(spans))
+            }
+            None => Cell::from(Line::from(self.content.clone())),
+        }
     }
 
     pub fn matched_index(&self, query: &str) -> Option<usize> {

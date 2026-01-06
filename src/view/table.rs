@@ -257,7 +257,9 @@ impl TableView {
             .iter()
             .map(|&i| &self.row_cell_items[i])
             .collect();
-        let table = Table::new(&filtered_row_cell_items, &self.header_row_cells).theme(&self.theme);
+        let query = self.filter_input.value();
+        let table =
+            Table::new(&filtered_row_cell_items, &self.header_row_cells, query).theme(&self.theme);
         f.render_stateful_widget(table, table_area, &mut self.table_state);
 
         if self.attr_expanded {
@@ -624,7 +626,8 @@ fn attribute_to_cell_item(
         .collect::<String>();
     let cut_spans = cut_spans_by_width(spans, max_attribute_width, ELLIPSIS, theme);
     let width = cut_spans.iter().map(Span::width).sum();
-    (CellItem::new(cut_spans, plain), width)
+    let plain_width = console::measure_text_width(&plain);
+    (CellItem::new(cut_spans, plain, plain_width), width)
 }
 
 fn key_to_cell(key: &str, config: &UiTableConfig, theme: &ColorTheme) -> (Cell<'static>, usize) {
@@ -638,7 +641,7 @@ fn key_to_cell(key: &str, config: &UiTableConfig, theme: &ColorTheme) -> (Cell<'
 fn undefined_cell_item(theme: &ColorTheme) -> (CellItem<'static>, usize) {
     let s = "-";
     let content = vec![s.fg(theme.cell_undefined_fg)];
-    (CellItem::new(content, s), 1)
+    (CellItem::new(content, s, 1), 1)
 }
 
 fn get_raw_json_string(item: &Item, schema: &KeySchemaType) -> String {
