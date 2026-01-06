@@ -56,8 +56,10 @@ enum FilterState {
 
 struct TableViewHelps {
     table: Vec<Spans>,
+    table_filtered: Vec<Spans>,
     attr: Vec<Spans>,
     table_short: Vec<SpansWithPriority>,
+    table_filtered_short: Vec<SpansWithPriority>,
     attr_short: Vec<SpansWithPriority>,
 }
 
@@ -271,25 +273,33 @@ impl TableView {
         if self.attr_expanded {
             &self.helps.attr_short
         } else {
-            &self.helps.table_short
+            match self.filter_state {
+                FilterState::None => &self.helps.table_short,
+                FilterState::Filtering | FilterState::Filtered => &self.helps.table_filtered_short,
+            }
         }
     }
 }
 
 impl TableViewHelps {
     fn new(mapper: &UserEventMapper, theme: ColorTheme) -> TableViewHelps {
-        let (table_helps, attr_helps) = build_helps(mapper, theme);
-        let (table_short_helps, attr_short_helps) = build_short_helps(mapper);
+        let (table, table_filtered, attr) = build_helps(mapper, theme);
+        let (table_short, table_filtered_short, attr_short) = build_short_helps(mapper);
         TableViewHelps {
-            table: table_helps,
-            attr: attr_helps,
-            table_short: table_short_helps,
-            attr_short: attr_short_helps,
+            table,
+            table_filtered,
+            attr,
+            table_short,
+            table_filtered_short,
+            attr_short,
         }
     }
 }
 
-fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<Spans>) {
+fn build_helps(
+    mapper: &UserEventMapper,
+    theme: ColorTheme,
+) -> (Vec<Spans>, Vec<Spans>, Vec<Spans>) {
     #[rustfmt::skip]
     let table_helps = vec![
         BuildHelpsItem::new(UserEvent::Quit, "Quit app"),
@@ -305,6 +315,30 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<
         BuildHelpsItem::new(UserEvent::GoToLeft, "Select first column"),
         BuildHelpsItem::new(UserEvent::GoToRight, "Select last column"),
         BuildHelpsItem::new(UserEvent::Confirm, "Open selected item"),
+        BuildHelpsItem::new(UserEvent::QuickFilter, "Filter items"),
+        BuildHelpsItem::new(UserEvent::Expand, "Expand selected attribute"),
+        BuildHelpsItem::new(UserEvent::Insight, "Open table insight"),
+        BuildHelpsItem::new(UserEvent::Widen, "Widen selected column"),
+        BuildHelpsItem::new(UserEvent::Narrow, "Narrow selected column"),
+        BuildHelpsItem::new(UserEvent::Reload, "Reload table data"),
+        BuildHelpsItem::new(UserEvent::CopyToClipboard, "Copy selected item"),
+    ];
+    #[rustfmt::skip]
+    let table_filtered_helps = vec![
+        BuildHelpsItem::new(UserEvent::Quit, "Quit app"),
+        BuildHelpsItem::new(UserEvent::Close, "Back to table list"),
+        BuildHelpsItem::new(UserEvent::Down, "Select next row"),
+        BuildHelpsItem::new(UserEvent::Up, "Select previous row"),
+        BuildHelpsItem::new(UserEvent::Right, "Select next column"),
+        BuildHelpsItem::new(UserEvent::Left, "Select previous column"),
+        BuildHelpsItem::new(UserEvent::PageDown, "Select next page"),
+        BuildHelpsItem::new(UserEvent::PageUp, "Select previous page"),
+        BuildHelpsItem::new(UserEvent::GoToTop, "Select first row"),
+        BuildHelpsItem::new(UserEvent::GoToBottom, "Select last row"),
+        BuildHelpsItem::new(UserEvent::GoToLeft, "Select first column"),
+        BuildHelpsItem::new(UserEvent::GoToRight, "Select last column"),
+        BuildHelpsItem::new(UserEvent::Confirm, "Open selected item"),
+        BuildHelpsItem::new(UserEvent::Reset, "Clear filter"),
         BuildHelpsItem::new(UserEvent::Expand, "Expand selected attribute"),
         BuildHelpsItem::new(UserEvent::Insight, "Open table insight"),
         BuildHelpsItem::new(UserEvent::Widen, "Widen selected column"),
@@ -331,24 +365,48 @@ fn build_helps(mapper: &UserEventMapper, theme: ColorTheme) -> (Vec<Spans>, Vec<
     ];
     (
         build_help_spans(table_helps, mapper, theme),
+        build_help_spans(table_filtered_helps, mapper, theme),
         build_help_spans(attr_helps, mapper, theme),
     )
 }
 
-fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<SpansWithPriority>) {
+fn build_short_helps(
+    mapper: &UserEventMapper,
+) -> (
+    Vec<SpansWithPriority>,
+    Vec<SpansWithPriority>,
+    Vec<SpansWithPriority>,
+) {
     #[rustfmt::skip]
     let table_helps = vec![
         BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
         BuildShortHelpsItem::single(UserEvent::Close, "Back", 1),
-        BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select row", 5),
-        BuildShortHelpsItem::group(vec![UserEvent::Left, UserEvent::Right], "Select col", 6),
-        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 10),
+        BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select row", 6),
+        BuildShortHelpsItem::group(vec![UserEvent::Left, UserEvent::Right], "Select col", 7),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 11),
         BuildShortHelpsItem::single(UserEvent::Confirm, "Open", 2),
+        BuildShortHelpsItem::single(UserEvent::QuickFilter, "Filter", 5),
         BuildShortHelpsItem::single(UserEvent::Expand, "Expand", 4),
         BuildShortHelpsItem::single(UserEvent::Insight, "Insight", 3),
-        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 7),
-        BuildShortHelpsItem::group(vec![UserEvent::Widen, UserEvent::Narrow], "Widen/Narrow", 9),
-        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 8),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 8),
+        BuildShortHelpsItem::group(vec![UserEvent::Widen, UserEvent::Narrow], "Widen/Narrow", 10),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 9),
+        BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
+    ];
+    #[rustfmt::skip]
+    let table_filtered_helps = vec![
+        BuildShortHelpsItem::single(UserEvent::Quit, "Quit", 0),
+        BuildShortHelpsItem::single(UserEvent::Close, "Back", 1),
+        BuildShortHelpsItem::group(vec![UserEvent::Down, UserEvent::Up], "Select row", 6),
+        BuildShortHelpsItem::group(vec![UserEvent::Left, UserEvent::Right], "Select col", 7),
+        BuildShortHelpsItem::group(vec![UserEvent::GoToTop, UserEvent::GoToBottom], "Top/Bottom", 11),
+        BuildShortHelpsItem::single(UserEvent::Confirm, "Open", 2),
+        BuildShortHelpsItem::single(UserEvent::Reset, "Clear filter", 5),
+        BuildShortHelpsItem::single(UserEvent::Expand, "Expand", 4),
+        BuildShortHelpsItem::single(UserEvent::Insight, "Insight", 3),
+        BuildShortHelpsItem::single(UserEvent::CopyToClipboard, "Copy", 8),
+        BuildShortHelpsItem::group(vec![UserEvent::Widen, UserEvent::Narrow], "Widen/Narrow", 10),
+        BuildShortHelpsItem::single(UserEvent::Reload, "Reload", 9),
         BuildShortHelpsItem::single(UserEvent::Help, "Help", 0),
     ];
     #[rustfmt::skip]
@@ -364,6 +422,7 @@ fn build_short_helps(mapper: &UserEventMapper) -> (Vec<SpansWithPriority>, Vec<S
     ];
     (
         build_short_help_spans(table_helps, mapper),
+        build_short_help_spans(table_filtered_helps, mapper),
         build_short_help_spans(attr_helps, mapper),
     )
 }
@@ -565,7 +624,15 @@ impl TableView {
         if self.attr_expanded {
             self.tx.send(AppEvent::OpenHelp(self.helps.attr.clone()))
         } else {
-            self.tx.send(AppEvent::OpenHelp(self.helps.table.clone()))
+            match self.filter_state {
+                FilterState::None => {
+                    self.tx.send(AppEvent::OpenHelp(self.helps.table.clone()));
+                }
+                FilterState::Filtering | FilterState::Filtered => {
+                    self.tx
+                        .send(AppEvent::OpenHelp(self.helps.table_filtered.clone()));
+                }
+            }
         }
     }
 }
