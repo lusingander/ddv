@@ -220,6 +220,14 @@ impl TableState {
         self.offset_col = self.total_cols - count;
     }
 
+    pub fn select_index(&mut self, index: usize, offset_index: usize) {
+        if index >= self.total_rows {
+            return;
+        }
+        self.selected_row = index;
+        self.offset_row = index.saturating_sub(offset_index);
+    }
+
     pub fn update_table_state(&mut self) {
         let row = self.selected_row - self.offset_row;
         if let Some(col) = self.selected_col {
@@ -268,6 +276,10 @@ impl TableState {
 
     pub fn selected_col_width(&self) -> Option<usize> {
         self.selected_col.map(|col| self.col_widths[col])
+    }
+
+    pub fn selected_row_offset_index(&self) -> usize {
+        self.selected_row - self.offset_row
     }
 }
 

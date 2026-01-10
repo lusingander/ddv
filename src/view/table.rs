@@ -569,9 +569,11 @@ impl TableView {
             FilterState::Filtering | FilterState::Filtered => {
                 self.filter_input.reset();
                 self.filter_state = FilterState::None;
-                // let orig_idx = self.view_indices[self.list_state.selected];
+                let orig_idx = self.view_indices[self.table_state.selected_row];
+                let before_offset_idx = self.table_state.selected_row_offset_index();
                 self.filter_view_indices();
-                // self.list_state.select_index(orig_idx);
+                self.table_state.select_index(orig_idx, before_offset_idx);
+                self.table_state.update_table_state();
                 self.tx.send(AppEvent::ClearStatus);
             }
             FilterState::None => {}
