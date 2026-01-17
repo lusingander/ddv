@@ -587,17 +587,20 @@ impl TableView {
 
     fn filter_view_indices(&mut self) {
         let query = self.filter_input.value();
-        self.view_indices = self
-            .row_cell_items
-            .iter()
-            .enumerate()
-            .filter(|(_, cell_items)| {
-                cell_items
-                    .iter()
-                    .any(|cell_item| cell_item.matched_index(query).is_some())
-            })
-            .map(|(i, _)| i)
-            .collect();
+        self.view_indices = if query.is_empty() {
+            (0..self.items.len()).collect()
+        } else {
+            self.row_cell_items
+                .iter()
+                .enumerate()
+                .filter(|(_, cell_items)| {
+                    cell_items
+                        .iter()
+                        .any(|cell_item| !cell_item.matched_indices(query).is_empty())
+                })
+                .map(|(i, _)| i)
+                .collect()
+        };
         self.table_state = self
             .table_state
             .with_new_total_rows(self.view_indices.len());
