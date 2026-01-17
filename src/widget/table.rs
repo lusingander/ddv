@@ -422,26 +422,63 @@ impl<'a> CellItem<'a> {
         if query.is_empty() {
             return Cell::from(Line::from(self.content.clone()));
         }
-        match self.matched_index(query) {
-            Some(i) => {
-                let mut hm = highlight_matched_text(self.content.clone());
-                if self.plain_width > col_width {
-                    hm = hm.ellipsis(ELLIPSIS);
-                }
-                let spans = hm
-                    .matched_range(i, i + query.len())
-                    .matched_fg(matched_fg)
-                    .matched_bg(matched_bg)
-                    .into_spans();
-                Cell::from(Line::from(spans))
+        let indices = self.matched_indices(query);
+        if indices.is_empty() {
+            Cell::from(Line::from(self.content.clone()))
+        } else {
+            let mut hm = highlight_matched_text(self.content.clone());
+            if self.plain_width > col_width {
+                hm = hm.ellipsis(ELLIPSIS);
             }
-            None => Cell::from(Line::from(self.content.clone())),
+            let spans = hm
+                .matched_indices(indices)
+                .matched_fg(matched_fg)
+                .matched_bg(matched_bg)
+                .into_spans();
+            Cell::from(Line::from(spans))
         }
     }
 
-    pub fn matched_index(&self, query: &str) -> Option<usize> {
-        let lower_query = query.to_lowercase();
-        let lower_plain = self.plain.to_lowercase();
-        lower_plain.find(&lower_query)
+    pub fn matched_indices(&self, query: &str) -> Vec<usize> {
+        matched_indices(query, &self.plain)
+    }
+}
+
+fn matched_indices(query: &str, plain: &str) -> Vec<usize> {
+    let mut indices = Vec::new();
+    let lower_plain = plain.to_lowercase();
+    for q in query.split("|") {
+        if q.is_empty() {
+            continue;
+        }
+        let lower_query = q.to_lowercase();
+        let l = lower_query.len();
+        if let Some(i) = lower_plain.find(&lower_query) {
+            for idx in i..i + l {
+                indices.push(idx);
+            }
+        }
+    }
+    indices
+}
+
+#[cfg(test)]
+mod tests {
+    use rstest::*;
+
+    use super::*;
+
+    #[rstest]
+    #[case("", vec![])]
+    #[case("o", vec![4])]
+    #[case("lo", vec![3, 4])]
+    #[case("WOR", vec![6, 7, 8])]
+    #[case("el|or", vec![1, 2, 7, 8])]
+    #[case("ll|", vec![2, 3])]
+    #[case("|rl", vec![8, 9])]
+    fn test_matched_indices(#[case] query: &str, #[case] expected: Vec<usize>) {
+        let plain = "Hello World";
+        let actual = matched_indices(query, plain);
+        assert_eq!(actual, expected);
     }
 }
