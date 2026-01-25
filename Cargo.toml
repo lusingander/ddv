@@ -15,13 +15,13 @@ rust-version = "1.88.0"
 exclude = ["/.github", "/img"]
 
 [dependencies]
-ansi-to-tui = "8.0.0"
+ansi-to-tui = "8.0.1"
 arboard = "3.6.1"
 aws-config = "1.8.12"
-aws-sdk-dynamodb = "1.101.0"
-aws-smithy-types = "1.3.5"
+aws-sdk-dynamodb = "1.103.0"
+aws-smithy-types = "1.3.6"
 base64 = "0.22.1"
-chrono = { version = "0.4.42", features = ["serde"] }
+chrono = { version = "0.4.43", features = ["serde"] }
 clap = { version = "4.5.54", features = ["derive"] }
 console = "0.16.2"
 humansize = "2.1.3"
@@ -29,9 +29,9 @@ itsuki = "0.2.1"
 laurier = "0.3.0"
 once_cell = "1.21.3"
 ratatui = "0.30.0"
-rust_decimal = "1.39.0"
+rust_decimal = "1.40.0"
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.148"
+serde_json = "1.0.149"
 serde_with = "3.16.1"
 smart-default = "0.7.1"
 syntect = { version = "5.3.0", default-features = false, features = [
