@@ -472,7 +472,10 @@ impl TableView {
 
 impl TableView {
     fn open_item(&self) {
-        if let Some(item) = self.items.get(self.table_state.selected_row) {
+        if let Some(item) = self
+            .items
+            .get(self.view_indices[self.table_state.selected_row])
+        {
             let desc = self.table_description.clone();
             let item = item.clone();
             self.tx.send(AppEvent::OpenItem(desc, item));
@@ -486,7 +489,7 @@ impl TableView {
 
     fn open_expand_selected_attr(&mut self) {
         if let Some(col) = self.table_state.selected_col {
-            let selected_item = &self.items[self.table_state.selected_row];
+            let selected_item = &self.items[self.view_indices[self.table_state.selected_row]];
             let schema = &self.table_description.key_schema_type;
             let key = &list_attribute_keys(&self.items, schema)[col];
             if let Some(attr) = selected_item.attributes.get(key) {
@@ -607,7 +610,7 @@ impl TableView {
     }
 
     fn copy_to_clipboard(&self) {
-        let selected_item = &self.items[self.table_state.selected_row];
+        let selected_item = &self.items[self.view_indices[self.table_state.selected_row]];
         let schema = &self.table_description.key_schema_type;
 
         let (name, content) = if let Some(col) = self.table_state.selected_col {
