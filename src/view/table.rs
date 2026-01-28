@@ -472,10 +472,7 @@ impl TableView {
 
 impl TableView {
     fn open_item(&self) {
-        if let Some(item) = self
-            .items
-            .get(self.view_indices[self.table_state.selected_row])
-        {
+        if let Some(item) = self.current_selected_item() {
             let desc = self.table_description.clone();
             let item = item.clone();
             self.tx.send(AppEvent::OpenItem(desc, item));
@@ -489,14 +486,15 @@ impl TableView {
 
     fn open_expand_selected_attr(&mut self) {
         if let Some(col) = self.table_state.selected_col {
-            let selected_item = &self.items[self.view_indices[self.table_state.selected_row]];
-            let schema = &self.table_description.key_schema_type;
-            let key = &list_attribute_keys(&self.items, schema)[col];
-            if let Some(attr) = selected_item.attributes.get(key) {
-                let lines = get_raw_json_attribute_lines(attr, &self.theme);
-                let options = self.attr_scroll_lines_state.current_options();
-                self.attr_scroll_lines_state = ScrollLinesState::new(lines, options);
-                self.attr_expanded = true;
+            if let Some(selected_item) = self.current_selected_item() {
+                let schema = &self.table_description.key_schema_type;
+                let key = &list_attribute_keys(&self.items, schema)[col];
+                if let Some(attr) = selected_item.attributes.get(key) {
+                    let lines = get_raw_json_attribute_lines(attr, &self.theme);
+                    let options = self.attr_scroll_lines_state.current_options();
+                    self.attr_scroll_lines_state = ScrollLinesState::new(lines, options);
+                    self.attr_expanded = true;
+                }
             }
         }
     }
@@ -609,28 +607,35 @@ impl TableView {
             .with_new_total_rows(self.view_indices.len());
     }
 
-    fn copy_to_clipboard(&self) {
-        let selected_item = &self.items[self.view_indices[self.table_state.selected_row]];
-        let schema = &self.table_description.key_schema_type;
+    fn current_selected_item(&self) -> Option<&Item> {
+        self.view_indices
+            .get(self.table_state.selected_row)
+            .and_then(|&idx| self.items.get(idx))
+    }
 
-        let (name, content) = if let Some(col) = self.table_state.selected_col {
-            let key = &list_attribute_keys(&self.items, schema)[col];
-            if let Some(attr) = selected_item.attributes.get(key) {
-                if self.attr_expanded {
-                    ("selected attribute", get_raw_json_attribute_string(attr))
+    fn copy_to_clipboard(&self) {
+        if let Some(selected_item) = self.current_selected_item() {
+            let schema = &self.table_description.key_schema_type;
+
+            let (name, content) = if let Some(col) = self.table_state.selected_col {
+                let key = &list_attribute_keys(&self.items, schema)[col];
+                if let Some(attr) = selected_item.attributes.get(key) {
+                    if self.attr_expanded {
+                        ("selected attribute", get_raw_json_attribute_string(attr))
+                    } else {
+                        ("selected attribute", attr.to_simple_string())
+                    }
                 } else {
-                    ("selected attribute", attr.to_simple_string())
+                    return;
                 }
             } else {
-                return;
-            }
-        } else {
-            let raw_json_string = get_raw_json_string(selected_item, schema);
-            ("selected item", raw_json_string)
-        };
+                let raw_json_string = get_raw_json_string(selected_item, schema);
+                ("selected item", raw_json_string)
+            };
 
-        self.tx
-            .send(AppEvent::CopyToClipboard(name.into(), content));
+            self.tx
+                .send(AppEvent::CopyToClipboard(name.into(), content));
+        }
     }
 
     fn open_help(&self) {
