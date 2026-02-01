@@ -207,6 +207,14 @@ impl TableView {
                     self.table_state.select_prev_col();
                     self.table_state.update_table_state();
                 }
+                UserEvent::ScrollDown => {
+                    self.table_state.scroll_down();
+                    self.table_state.update_table_state();
+                }
+                UserEvent::ScrollUp => {
+                    self.table_state.scroll_up();
+                    self.table_state.update_table_state();
+                }
                 UserEvent::QuickFilter => {
                     self.start_filtering();
                 }

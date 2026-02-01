@@ -220,6 +220,30 @@ impl TableState {
         self.offset_col = self.total_cols - count;
     }
 
+    pub fn scroll_down(&mut self) {
+        if self.total_rows == 0 {
+            return;
+        }
+        if self.offset_row + self.height < self.total_rows {
+            self.offset_row += 1;
+            if self.selected_row < self.offset_row {
+                self.selected_row = self.offset_row;
+            }
+        }
+    }
+
+    pub fn scroll_up(&mut self) {
+        if self.total_rows == 0 {
+            return;
+        }
+        if self.offset_row > 0 {
+            self.offset_row -= 1;
+            if self.selected_row - self.offset_row >= self.height {
+                self.selected_row = self.offset_row + self.height - 1;
+            }
+        }
+    }
+
     pub fn select_index(&mut self, index: usize, offset_index: usize) {
         if index >= self.total_rows {
             return;
