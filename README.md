@@ -8,9 +8,6 @@ Terminal DynamoDB Viewer ⚡️
 
 ## About
 
-> [!NOTE]
-> This application is in early development. It is missing a lot of features and behaviors.
-
 DDV is a TUI application to view Amazon DynamoDB in the terminal.
 
 > [!WARNING]
@@ -19,6 +16,10 @@ DDV is a TUI application to view Amazon DynamoDB in the terminal.
 ### Goals
 
 - Provide a simple way to view, search, update, and delete DynamoDB items in the terminal.
+
+> [!NOTE]
+> This application is in early development. It is missing a lot of features and behaviors.
+> Currently, update functions, such as creating or deleting items, are not implemented.
 
 ### Non-Goals
 
