@@ -590,7 +590,7 @@ fn build_attribute_distributions(
         .into_iter()
         .map(|(key, counter)| {
             let mut distributions: Vec<(AttributeType, usize)> = counter.into_iter().collect();
-            distributions.sort_by(|a, b| b.1.cmp(&a.1)); // sort by count desc
+            distributions.sort_by_key(|d| std::cmp::Reverse(d.1)); // sort by count desc
             AttributeDistribution {
                 attribute_name: key.clone(),
                 distributions,
