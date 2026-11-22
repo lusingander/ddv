@@ -16,38 +16,38 @@ exclude = ["/.github", "/img"]
 
 [dependencies]
 ansi-to-tui = "8.0.1"
-arboard = "3.6.1"
+arboard = "3.7.0"
 aws-config = "1.13.3"
 aws-sdk-dynamodb = { version = "1.140.0", default-features = false, features = [
     "default-https-client",
     "rt-tokio",
 ] }
 aws-smithy-types = "1.9.4"
-base64 = "0.22.1"
-chrono = { version = "0.4.44", features = ["serde"] }
-clap = { version = "4.6.0", features = ["derive"] }
-console = "0.16.3"
+base64 = "0.23.1"
+chrono = { version = "0.4.45", features = ["serde"] }
+clap = { version = "4.6.9", features = ["derive"] }
+console = "0.16.6"
 humansize = "2.1.3"
 itsuki = "0.2.1"
-laurier = "0.3.0"
+laurier = "0.4.0"
 once_cell = "1.21.4"
-ratatui = "0.30.0"
-rust_decimal = "1.40.0"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
-serde_with = "3.18.0"
+ratatui = "0.30.2"
+rust_decimal = "1.43.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+serde_with = "3.25.0"
 smart-default = "0.7.1"
 syntect = { version = "5.3.0", default-features = false, features = [
     "default-fancy",
 ] }
-textwrap = "0.16.2"
-tokio = { version = "1.50.0", features = ["full"] }
-toml = "0.9.8"
-tui-input = "0.15.0"
-umbra = "0.4.0"
+textwrap = "0.16.4"
+tokio = { version = "1.54.1", features = ["full"] }
+toml = "1.2.2"
+tui-input = "0.15.5"
+umbra = "0.6.0"
 
 [dev-dependencies]
-rstest = "0.26.1"
+rstest = "0.28.0"
 
 [profile.release]
 codegen-units = 1
