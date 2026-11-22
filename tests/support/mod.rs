@@ -4,8 +4,8 @@ use anyhow::{ensure, Context, Result};
 use aws_sdk_dynamodb::{
     config::{Credentials, Region},
     types::{
-        AttributeDefinition, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType,
-        TableStatus,
+        AttributeDefinition, AttributeValue, KeySchemaElement, KeyType, ProvisionedThroughput,
+        ScalarAttributeType, TableStatus,
     },
 };
 use tempfile::{tempdir, TempDir};
@@ -120,6 +120,18 @@ impl Database {
         .with_context(|| format!("Fixture table '{name}' did not become active"))?;
         Ok(())
     }
+
+    pub async fn put_item(&self, table: &str, key: &str, value: &str) -> Result<()> {
+        self.client
+            .put_item()
+            .table_name(table)
+            .item("pk", AttributeValue::S(key.into()))
+            .item("value", AttributeValue::S(value.into()))
+            .send()
+            .await
+            .with_context(|| format!("Failed to create fixture item '{key}' in table '{table}'"))?;
+        Ok(())
+    }
 }
 
 pub struct TestApp {
@@ -209,4 +221,27 @@ pub fn table_list_ready(screen: &Screen, name: &str) -> bool {
                     .nth(1)
                     .is_some_and(|value| value.trim_matches(['│', ' ']) == name)
         })
+}
+
+pub fn at_table(screen: &Screen, name: &str) -> bool {
+    screen.row_text(0).contains(&format!(" {name} ─")) && !screen.contains("Loading...")
+}
+
+pub fn at_item(screen: &Screen, table: &str, key: &str) -> bool {
+    screen.row_text(0).contains(&format!(" {table} ({key}) ")) && !screen.contains("Loading...")
+}
+
+pub fn selected_item(screen: &Screen, key: &str) -> bool {
+    let displayed_key = format!("\"{key}\"");
+    (2..screen.rows().saturating_sub(2)).any(|row| {
+        screen
+            .row_text(row)
+            .trim_matches(['│', ' '])
+            .split_whitespace()
+            .next()
+            == Some(displayed_key.as_str())
+            && screen
+                .cell(row, 2)
+                .is_some_and(|cell| cell.style().bg == Color::Indexed(8))
+    }) && !screen.contains("Loading...")
 }
