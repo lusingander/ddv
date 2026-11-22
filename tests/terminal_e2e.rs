@@ -272,3 +272,55 @@ async fn resets_a_filter_with_no_matches_on_confirm_and_can_open_an_item(
 
     app.quit()
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn shows_a_warning_when_no_tables_exist_and_can_quit() -> Result<()> {
+    let database = Database::new(&[]).await?;
+    let mut app = TestApp::spawn(&database.endpoint)?;
+    let empty = app.terminal.snapshot_after(|screen| {
+        footer_contains(screen, "No tables found.") && !screen.contains("Loading...")
+    })?;
+    assert!(table_names(&empty).is_empty(), "{empty}");
+    assert!(!empty.contains("ERROR:"), "{empty}");
+
+    app.quit()
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn stays_on_the_list_for_an_empty_table_and_can_open_another_table() -> Result<()> {
+    let database = Database::new(&["ddv-empty", "ddv-populated"]).await?;
+    database
+        .put_item("ddv-populated", "available", "available value")
+        .await?;
+    let mut app = TestApp::spawn(&database.endpoint)?;
+    app.terminal
+        .wait_until(|screen| table_list_ready(screen, "ddv-empty"))?;
+
+    app.terminal.send(Key::Enter)?;
+    let empty = app.terminal.snapshot_after(|screen| {
+        table_list_ready(screen, "ddv-empty")
+            && footer_contains(screen, "Table ddv-empty has no items")
+    })?;
+    assert_eq!(
+        table_names(&empty),
+        ["ddv-empty", "ddv-populated"],
+        "{empty}"
+    );
+    assert!(!empty.contains("ERROR:"), "{empty}");
+
+    // The next key dismisses the warning and performs its usual action.
+    app.terminal.send(Key::Char('j'))?;
+    app.terminal.wait_until(|screen| {
+        table_list_ready(screen, "ddv-populated") && !footer_contains(screen, "has no items")
+    })?;
+    app.terminal.send(Key::Enter)?;
+    app.terminal.wait_until(|screen| {
+        at_table(screen, "ddv-populated") && selected_item(screen, "available")
+    })?;
+    app.terminal.send(Key::Enter)?;
+    app.terminal.wait_until(|screen| {
+        at_item(screen, "ddv-populated", "available") && screen.contains("available value")
+    })?;
+
+    app.quit()
+}
