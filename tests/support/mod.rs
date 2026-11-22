@@ -245,3 +245,34 @@ pub fn selected_item(screen: &Screen, key: &str) -> bool {
                 .is_some_and(|cell| cell.style().bg == Color::Indexed(8))
     }) && !screen.contains("Loading...")
 }
+
+pub fn table_names(screen: &Screen) -> Vec<String> {
+    (1..screen.rows().saturating_sub(2))
+        .map(|row| {
+            screen
+                .row_text(row)
+                .chars()
+                .take(TABLE_LIST_WIDTH)
+                .collect::<String>()
+                .trim_matches(['│', ' '])
+                .to_owned()
+        })
+        .filter(|name| !name.is_empty())
+        .collect()
+}
+
+pub fn item_rows(screen: &Screen) -> Vec<String> {
+    (2..screen.rows().saturating_sub(2))
+        .map(|row| screen.row_text(row).trim_matches(['│', ' ']).to_owned())
+        .filter(|row| !row.is_empty())
+        .collect()
+}
+
+pub fn filter_input(screen: &Screen, query: &str) -> bool {
+    screen.row_text(screen.rows() - 1).trim() == format!("/{query}")
+        && !screen.contains("Loading...")
+}
+
+pub fn footer_contains(screen: &Screen, text: &str) -> bool {
+    screen.row_text(screen.rows() - 1).contains(text)
+}
