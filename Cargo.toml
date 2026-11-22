@@ -17,9 +17,12 @@ exclude = ["/.github", "/img"]
 [dependencies]
 ansi-to-tui = "8.0.1"
 arboard = "3.6.1"
-aws-config = "1.8.15"
-aws-sdk-dynamodb = "1.108.0"
-aws-smithy-types = "1.4.6"
+aws-config = "1.13.3"
+aws-sdk-dynamodb = { version = "1.140.0", default-features = false, features = [
+    "default-https-client",
+    "rt-tokio",
+] }
+aws-smithy-types = "1.9.4"
 base64 = "0.22.1"
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.6.0", features = ["derive"] }
