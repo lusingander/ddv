@@ -16,7 +16,7 @@ exclude = ["/.github", "/img"]
 
 [dependencies]
 ansi-to-tui = "8.0.1"
-arboard = "3.7.0"
+arboard = { version = "3.7.0", default-features = false }
 aws-config = "1.13.3"
 aws-sdk-dynamodb = { version = "1.140.0", default-features = false, features = [
     "default-https-client",
