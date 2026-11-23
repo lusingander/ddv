@@ -45,10 +45,6 @@ We use [GitHub Actions](https://github.com/lusingander/ddv/blob/master/.github/w
 - Build with `cargo build` and run all tests with `cargo test`.
   - Run only unit tests with `cargo test --bin ddv` or E2E tests with `cargo test --test terminal_e2e`.
 - E2E tests require a running Docker daemon (Docker 29.2+).
-  - Each test starts an isolated DynamoDB Local container (`amazon/dynamodb-local:3.3.2`), creates its fixtures through the AWS SDK, and drives the real `ddv` binary through a pseudo-terminal using `termlens`.
-  - The image is pulled automatically on the first run. No AWS account, credentials, or separately managed database is needed.
-  - The application runs with a temporary config and working directory, and its own test credentials. Your AWS profiles and DDV settings are not used.
-  - Failed terminal waits include a screen dump. Containers and temporary files are cleaned up after each test; Unix tests also enable Testcontainers' watchdog for interrupted runs.
 
 ## License
 
